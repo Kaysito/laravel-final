@@ -10,9 +10,20 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        //
+    ->withMiddleware(function (Middleware $middleware) {
+        
+        // 🛡️ REGLA DE ORO: No encriptar la cookie del Token
+        // Esto permite que nuestro JwtMiddleware lea el token creado por JS
+        $middleware->encryptCookies(except: [
+            'jwt_token',
+        ]);
+
+        // Registramos el apodo (alias) para usarlo en las rutas
+        $middleware->alias([
+            'jwt.verify' => \App\Http\Middleware\JwtMiddleware::class,
+        ]);
+        
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
