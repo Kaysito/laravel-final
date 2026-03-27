@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('usuarios', function (Blueprint $table) {
             $table->id();
-            
-            // Campos exactos de tu especificación
             $table->string('strNombreUsuario')->unique();
-            $table->unsignedBigInteger('idPerfil')->nullable(); // Nullable por ahora para poder probar el login
-            $table->string('strPwd'); 
-            $table->boolean('idEstadoUsuario')->default(1); // 1 es Activo, 0 es Inactivo
+            $table->string('strPwd');
+            $table->boolean('idEstadoUsuario')->default(1); // 1 = Activo, 0 = Inactivo
+            
+            // 👇 NUEVOS CAMPOS DE LA RÚBRICA 👇
+            $table->foreignId('idPerfil')->constrained('perfiles'); // Llave foránea a perfiles
             $table->string('strCorreo')->unique();
-            $table->string('strNumeroCelular')->nullable();
+            $table->string('strNumeroCelular');
+            $table->string('strImagen')->nullable(); // Para guardar la URL de Uploadcare
             
             $table->timestamps();
         });

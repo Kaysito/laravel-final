@@ -3,442 +3,406 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Dashboard') — Proyecto</title>
+    <title>@yield('title', 'Admin') — Proyecto</title>
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
     <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        neon: {
-                            red:    '#FF1744',
-                            rose:   '#FF4569',
-                            pink:   '#FF6B8A',
-                            dark:   '#CC0033',
-                            deeper: '#8B0000',
-                        },
-                        zinc: {
-                            925: '#131316',
-                            950: '#0C0C0F',
-                        }
-                    },
-                    fontFamily: {
-                        sans:  ['DM Sans', 'sans-serif'],
-                        mono:  ['Space Mono', 'monospace'],
-                    },
-                    boxShadow: {
-                        'neon-sm':  '0 0 8px rgba(255,23,68,0.4)',
-                        'neon-md':  '0 0 20px rgba(255,23,68,0.35), 0 0 40px rgba(255,23,68,0.15)',
-                        'neon-lg':  '0 0 30px rgba(255,23,68,0.5), 0 0 60px rgba(255,23,68,0.2)',
-                        'card':     '0 1px 3px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3)',
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4,0,0.6,1) infinite',
-                    }
-                }
-            }
-        }
+        UPLOADCARE_PUBLIC_KEY = 'b3a3c1bece70d9761e6b';
+        UPLOADCARE_LOCALE = 'es';
     </script>
-
+    <script src="https://ucarecdn.com/libs/widget/3.x/uploadcare.full.min.js" charset="utf-8"></script>
+    
     <style>
-        /* ── Base ─────────────────────────────────────────────── */
-        *, *::before, *::after { box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Geist:wght@300;400;500;600;700&display=swap');
 
+        /* ☀️ DEFAULT: TEMA CLARO */
         :root {
-            --neon:        #FF1744;
-            --neon-muted:  rgba(255, 23, 68, 0.18);
-            --neon-border: rgba(255, 23, 68, 0.28);
-            --surface-1:   #0C0C0F;
-            --surface-2:   #131316;
-            --surface-3:   #1A1A1F;
-            --surface-4:   #22222A;
-            --text-1:      #F2F2F4;
-            --text-2:      #A0A0AD;
-            --text-3:      #606070;
-            --scrollbar-w: 4px;
+            --surface-1: #ffffff;
+            --surface-2: #fdf8f8;
+            --surface-3: #f5ebeb;
+            --surface-4: #e8dada;
+            --surface-5: #d4c1c1;
+            
+            --text-1: #2d1b1b;
+            --text-2: #5c4343;
+            --text-3: #8a6d6d;
+            
+            --neon: #e63757;
+            --neon-dark: #b82943;
+            --neon-border: rgba(230,55,87,0.3);
+            --neon-muted: rgba(230,55,87,0.08);
         }
 
-        html { font-size: 15px; }
-
-        body {
-            background-color: var(--surface-1);
-            color: var(--text-1);
-            font-family: 'DM Sans', sans-serif;
-            -webkit-font-smoothing: antialiased;
+        /* 🌙 TEMA OSCURO */
+        [data-theme="dark"] {
+            --surface-1: #0a0a0f;
+            --surface-2: #111118;
+            --surface-3: #18181f;
+            --surface-4: #22222c;
+            --surface-5: #2a2a36;
+            
+            --text-1: #f0f0f5;
+            --text-2: #a0a0b0;
+            --text-3: #60607a;
+            
+            --neon-border: rgba(230,55,87,0.4);
         }
 
-        /* ── Scrollbar ────────────────────────────────────────── */
-        ::-webkit-scrollbar { width: var(--scrollbar-w); }
+        * { font-family: 'Geist', system-ui, sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        body { 
+            background: var(--surface-1); 
+            color: var(--text-1); 
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--surface-2); }
-        ::-webkit-scrollbar-thumb { background: var(--neon-border); border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--neon); }
+        ::-webkit-scrollbar-thumb { background: var(--surface-5); border-radius: 3px; }
 
-        /* ── Sidebar ──────────────────────────────────────────── */
-        #sidebar {
-            background: var(--surface-2);
-            border-right: 1px solid var(--neon-border);
-            width: 256px;
-            flex-shrink: 0;
-        }
+        /* ── Sidebar ── */
+        .sidebar { background: var(--surface-2); border-right: 1px solid var(--surface-4); transition: background-color 0.3s ease, border-color 0.3s ease; }
+        .nav-item { color: var(--text-2); transition: all 0.15s ease; border-radius: 8px; }
+        .nav-item:hover { background: var(--surface-3); color: var(--text-1); }
+        .nav-item.active { background: var(--neon-muted); color: var(--neon); border: 1px solid var(--neon-border); }
+        .nav-item.active .nav-icon { color: var(--neon); }
 
-        .sidebar-logo {
-            border-bottom: 1px solid var(--neon-border);
-            background: linear-gradient(135deg, var(--surface-3) 0%, var(--surface-2) 100%);
-        }
+        /* ── Card & Inputs ── */
+        .card { background: var(--surface-2); border: 1px solid var(--surface-4); border-radius: 14px; transition: background-color 0.3s ease, border-color 0.3s ease;}
+        .input-field { background: var(--surface-3); border: 1px solid var(--surface-4); color: var(--text-1); border-radius: 8px; transition: all 0.2s ease; outline: none; }
+        .input-field:focus { border-color: var(--neon-border); box-shadow: 0 0 0 3px rgba(230,55,87,0.1); }
+        .input-field::placeholder { color: var(--text-3); }
 
-        .logo-mark {
-            width: 34px; height: 34px;
-            background: var(--neon);
-            box-shadow: var(--neon-sm, 0 0 8px rgba(255,23,68,0.5));
-            clip-path: polygon(20% 0%, 80% 0%, 100% 20%, 100% 80%, 80% 100%, 20% 100%, 0% 80%, 0% 20%);
-            display: flex; align-items: center; justify-content: center;
-        }
+        /* ── Action buttons & Tooltips ── */
+        .action-btn { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; transition: all 0.15s ease; color: var(--text-3); background: transparent; border: none; cursor: pointer; }
+        .action-btn:hover { color: var(--text-1); background: var(--surface-4); }
+        
+        .tooltip { position: relative; }
+        .tooltip::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--surface-5); color: var(--text-1); font-size: 11px; padding: 4px 8px; border-radius: 5px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 99; }
+        .tooltip:hover::after { opacity: 1; }
 
-        .nav-group-label {
-            font-family: 'Space Mono', monospace;
-            font-size: 9px;
-            letter-spacing: 0.18em;
-            color: var(--text-3);
-            text-transform: uppercase;
-            padding: 20px 20px 6px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .nav-group-label::after {
-            content: '';
-            flex: 1; height: 1px;
-            background: var(--neon-border);
-        }
+        .section-divider { height: 1px; background: linear-gradient(to right, transparent, var(--surface-4), transparent); }
 
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 9px 20px;
-            font-size: 13.5px;
-            font-weight: 400;
-            color: var(--text-2);
-            text-decoration: none;
-            border-left: 2px solid transparent;
-            transition: all 0.15s ease;
-            position: relative;
-        }
-        .nav-link:hover {
-            color: var(--text-1);
-            background: var(--neon-muted);
-            border-left-color: var(--neon);
-        }
-        .nav-link.active {
-            color: var(--neon);
-            background: rgba(255,23,68,0.1);
-            border-left-color: var(--neon);
-            font-weight: 500;
-        }
-        .nav-link i {
-            width: 16px;
-            text-align: center;
-            font-size: 13px;
-            opacity: 0.75;
-        }
-        .nav-link:hover i,
-        .nav-link.active i { opacity: 1; }
+        /* ── Toast ── */
+        .toast { position: fixed; bottom: 24px; right: 24px; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 10px; background: var(--surface-3); border: 1px solid var(--surface-4); box-shadow: 0 8px 32px rgba(0,0,0,0.4); z-index: 1000; transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+        .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
+        .toast.success { border-color: rgba(74,222,128,0.3); }
+        .toast.error   { border-color: rgba(230,55,87,0.3);  }
+        .toast.info    { border-color: rgba(96,165,250,0.3);  }
 
-        /* ── Topbar ───────────────────────────────────────────── */
-        #topbar {
-            background: var(--surface-2);
-            border-bottom: 1px solid var(--neon-border);
-            height: 60px;
-        }
-
-        .breadcrumb-sep { color: var(--text-3); margin: 0 6px; }
-
-        /* ── Avatar ───────────────────────────────────────────── */
-        .avatar {
-            width: 34px; height: 34px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--neon), #8B0000);
-            box-shadow: 0 0 0 2px var(--neon-border);
-            font-family: 'Space Mono', monospace;
-            font-size: 12px;
-            font-weight: 700;
-            color: #fff;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        /* ── Neon badge ───────────────────────────────────────── */
-        .badge-neon {
-            font-family: 'Space Mono', monospace;
-            font-size: 9px;
-            letter-spacing: 0.1em;
-            padding: 2px 7px;
-            border-radius: 3px;
-            border: 1px solid var(--neon);
-            color: var(--neon);
-            background: rgba(255,23,68,0.08);
-            text-transform: uppercase;
-        }
-
-        /* ── Status dot ───────────────────────────────────────── */
-        .status-dot {
-            width: 7px; height: 7px;
-            border-radius: 50%;
-            background: #22c55e;
-            box-shadow: 0 0 6px rgba(34,197,94,0.6);
-            animation: pulse 2.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.45; }
-        }
-
-        /* ── Logout ───────────────────────────────────────────── */
-        .logout-btn {
-            display: flex; align-items: center; gap: 8px;
-            width: 100%; padding: 10px 20px;
-            font-size: 13px; color: var(--text-3);
-            border: none; background: none; cursor: pointer;
-            border-top: 1px solid var(--neon-border);
-            transition: color 0.15s;
-            text-decoration: none;
-        }
-        .logout-btn:hover { color: var(--neon); }
-
-        /* ── Content area ─────────────────────────────────────── */
-        #content {
-            background: var(--surface-1);
-        }
-
-        /* ── Utility: neon glow text ──────────────────────────── */
-        .text-neon { color: var(--neon); }
-        .text-neon-glow {
-            color: var(--neon);
-            text-shadow: 0 0 12px rgba(255,23,68,0.55);
-        }
-
-        /* ── Focus ring ───────────────────────────────────────── */
-        :focus-visible {
-            outline: 2px solid var(--neon);
-            outline-offset: 2px;
-        }
-
-        /* ── Top search (header) ──────────────────────────────── */
-        .search-input {
-            background: var(--surface-3);
-            border: 1px solid var(--surface-4);
-            border-radius: 6px;
-            color: var(--text-1);
-            font-size: 13px;
-            padding: 6px 12px 6px 32px;
-            width: 200px;
-            transition: border-color 0.15s, width 0.2s;
-        }
-        .search-input::placeholder { color: var(--text-3); }
-        .search-input:focus {
-            border-color: var(--neon-border);
-            box-shadow: 0 0 0 3px rgba(255,23,68,0.1);
-            width: 260px;
-            outline: none;
-        }
-
-        /* ── Notification bell ────────────────────────────────── */
-        .icon-btn {
-            width: 34px; height: 34px;
-            border-radius: 8px;
-            background: var(--surface-3);
-            border: 1px solid var(--surface-4);
-            color: var(--text-2);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
-            transition: all 0.15s;
-            position: relative;
-        }
-        .icon-btn:hover {
-            border-color: var(--neon-border);
-            color: var(--neon);
-            box-shadow: 0 0 10px rgba(255,23,68,0.2);
-        }
-        .notif-dot {
-            position: absolute; top: 6px; right: 6px;
-            width: 6px; height: 6px; border-radius: 50%;
-            background: var(--neon);
-            box-shadow: 0 0 6px rgba(255,23,68,0.8);
-        }
-
-        /* ── Sidebar collapse animation ───────────────────────── */
-        #sidebar { transition: width 0.22s ease; }
-
-        /* ── Version chip ─────────────────────────────────────── */
-        .version-chip {
-            font-family: 'Space Mono', monospace;
-            font-size: 9px; color: var(--text-3);
-            padding: 2px 6px;
-            border: 1px solid var(--surface-4);
-            border-radius: 3px;
-        }
+        @yield('styles')
     </style>
 </head>
-
 <body class="flex h-screen overflow-hidden">
 
-    <aside id="sidebar" aria-label="Navegación principal">
+    {{-- ─── SIDEBAR ──────────────────────────────────────────────── --}}
+    <aside class="sidebar w-60 flex-shrink-0 flex flex-col h-full z-20">
 
-        <div class="sidebar-logo h-[60px] flex items-center px-5 gap-3">
-            <div class="logo-mark">
+        {{-- Logo --}}
+        <div class="px-5 py-5 flex items-center gap-3 border-b border-[var(--surface-4)]">
+            <div class="w-8 h-8 rounded-lg bg-[var(--neon-dark)] flex items-center justify-center">
                 <i class="fas fa-bolt text-white text-xs"></i>
             </div>
-            <div class="flex flex-col leading-none">
-                <span class="text-sm font-semibold tracking-tight text-white">Proyecto</span>
-                <span class="version-chip mt-1">v2.4.1</span>
+            <div>
+                <p class="text-[var(--text-1)] font-semibold text-sm leading-none">Proyecto</p>
+                <p class="text-[var(--text-3)] text-[10px] font-mono mt-0.5">v2.4.1</p>
             </div>
         </div>
 
-        <nav class="flex-1 overflow-y-auto py-2" aria-label="Menú principal">
+        {{-- Nav --}}
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" id="sidebarNav">
+            <p class="px-2 mb-2 text-[9px] font-mono tracking-widest text-[var(--text-3)] uppercase">Principal</p>
 
-            <div class="nav-group-label">Seguridad</div>
-
-            <a href="{{ route('perfil.index') }}" class="nav-link {{ request()->routeIs('perfil.*') ? 'active' : '' }}" aria-label="Perfil de usuario">
-                <i class="fas fa-id-badge"></i>
-                <span>Perfil</span>
+            <a href="{{ route('home') }}"
+               class="nav-item {{ request()->routeIs('home') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
+                <i class="nav-icon fas fa-gauge-high w-4 text-center"></i>
+                <span>Dashboard</span>
             </a>
-            <a href="{{ route('modulo.index') }}" class="nav-link {{ request()->routeIs('modulo.*') ? 'active' : '' }}" aria-label="Módulos del sistema">
-                <i class="fas fa-cubes"></i>
+
+            <div class="section-divider my-3"></div>
+            
+            {{-- 👇 SECCIÓN DE SEGURIDAD --}}
+            <p class="px-2 mb-2 text-[9px] font-mono tracking-widest text-[var(--text-3)] uppercase">Seguridad</p>
+
+            <a href="{{ route('perfil.index') }}" data-modulo="Perfil"
+               class="nav-item {{ request()->routeIs('perfil.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
+                <i class="nav-icon fas fa-id-badge w-4 text-center"></i>
+                <span>Perfiles</span>
+            </a>
+            
+            <a href="{{ route('modulo.index') }}" data-modulo="Modulo"
+               class="nav-item {{ request()->routeIs('modulo.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
+                <i class="nav-icon fas fa-cubes w-4 text-center"></i>
                 <span>Módulos</span>
             </a>
-            <a href="{{ route('permisos.index') }}" class="nav-link {{ request()->routeIs('permisos.*') ? 'active' : '' }}" aria-label="Permisos por perfil">
-                <i class="fas fa-key"></i>
+            
+            <a href="{{ route('permisos.index') }}" data-modulo="Permisos-Perfil"
+               class="nav-item {{ request()->routeIs('permisos.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
+                <i class="nav-icon fas fa-key w-4 text-center"></i>
                 <span>Permisos-Perfil</span>
             </a>
-            <a href="{{ route('usuarios.index') }}" class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}" aria-label="Gestión de usuarios">
-                <i class="fas fa-users"></i>
+            
+            <a href="{{ route('usuarios.index') }}" data-modulo="Usuarios"
+               class="nav-item {{ request()->routeIs('usuarios.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
+                <i class="nav-icon fas fa-users w-4 text-center"></i>
                 <span>Usuarios</span>
             </a>
 
-            <div class="nav-group-label">Principal 1</div>
+            <div class="section-divider my-3"></div>
+            
+            {{-- 👇 VISTAS ESTÁTICAS --}}
+            <p class="px-2 mb-2 text-[9px] font-mono tracking-widest text-[var(--text-3)] uppercase">Módulos</p>
 
-            <a href="{{ route('p1.1.index') }}" class="nav-link {{ request()->routeIs('p1.1.*') ? 'active' : '' }}">
-                <i class="fas fa-circle-dot text-[10px]"></i>
+            <a href="{{ route('p1.1.index') }}" data-modulo="Principal1.1" 
+               class="nav-item {{ request()->routeIs('p1.1.index') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
+                <i class="nav-icon fas fa-box w-4 text-center"></i>
                 <span>Principal 1.1</span>
             </a>
-            <a href="{{ route('p1.2.index') }}" class="nav-link {{ request()->routeIs('p1.2.*') ? 'active' : '' }}">
-                <i class="fas fa-circle-dot text-[10px]"></i>
+            
+            <a href="{{ route('p1.2.index') }}" data-modulo="Principal1.2" 
+               class="nav-item {{ request()->routeIs('p1.2.index') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
+                <i class="nav-icon fas fa-layer-group w-4 text-center"></i>
                 <span>Principal 1.2</span>
             </a>
-
-            <div class="nav-group-label">Principal 2</div>
-
-            <a href="{{ route('p2.1.index') }}" class="nav-link {{ request()->routeIs('p2.1.*') ? 'active' : '' }}">
-                <i class="fas fa-circle-dot text-[10px]"></i>
+            
+            <a href="{{ route('p2.1.index') }}" data-modulo="Principal2.1" 
+               class="nav-item {{ request()->routeIs('p2.1.index') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
+                <i class="nav-icon fas fa-box-open w-4 text-center"></i>
                 <span>Principal 2.1</span>
             </a>
-            <a href="{{ route('p2.2.index') }}" class="nav-link {{ request()->routeIs('p2.2.*') ? 'active' : '' }}">
-                <i class="fas fa-circle-dot text-[10px]"></i>
+            
+            <a href="{{ route('p2.2.index') }}" data-modulo="Principal2.2" 
+               class="nav-item {{ request()->routeIs('p2.2.index') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
+                <i class="nav-icon fas fa-cubes-stacked w-4 text-center"></i>
                 <span>Principal 2.2</span>
             </a>
+
         </nav>
 
-        <div class="pb-1">
-            <div class="flex items-center gap-2 px-5 py-3 border-t border-[var(--neon-border)]">
-                <div class="status-dot"></div>
-                <span style="font-size:11px; color:var(--text-3);">Sistema operativo</span>
-            </div>
-            <a href="{{ route('logout') }}" class="logout-btn" aria-label="Cerrar sesión">
-                <i class="fas fa-arrow-right-from-bracket text-xs"></i>
-                <span>Cerrar sesión</span>
+        {{-- Logout --}}
+        <div class="px-3 py-4 border-t border-[var(--surface-4)]">
+            <a href="{{ route('logout') }}" onclick="localStorage.removeItem('user_data');"
+               class="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-red-500/10 transition-colors cursor-pointer group">
+                <div class="w-7 h-7 rounded-full bg-gradient-to-br from-red-500 to-[var(--neon)] flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0">
+                    <i class="fas fa-power-off"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-medium text-[var(--text-1)] truncate group-hover:text-red-400">Cerrar Sesión</p>
+                    <p class="text-[10px] text-[var(--text-3)] truncate">Terminar acceso</p>
+                </div>
             </a>
         </div>
     </aside>
 
+    {{-- ─── MAIN ──────────────────────────────────────────────────── --}}
+    <main class="flex-1 flex flex-col h-full min-w-0 bg-[var(--surface-1)] relative z-10 transition-colors duration-300">
 
-    <div class="flex flex-col flex-1 min-w-0 h-screen">
-
-        <header id="topbar" class="flex items-center px-6 gap-4 flex-shrink-0" role="banner">
-
-            <nav aria-label="Ubicación" class="flex-1 flex items-center gap-1 text-[13px]">
-                <a href="{{ route('home') }}" class="text-[var(--text-3)] hover:text-[var(--neon)] transition-colors" title="Ir al Inicio">
-                    <i class="fas fa-house text-[11px]"></i>
-                </a>
-                <span class="breadcrumb-sep">/</span>
-                @yield('breadcrumb', '<span style="color:var(--text-2)">Dashboard</span>')
-            </nav>
-
+        {{-- Top bar / breadcrumb --}}
+        <header class="flex items-center justify-between px-6 py-4 border-b border-[var(--surface-4)] bg-[var(--surface-1)] flex-shrink-0 z-20 transition-colors duration-300">
+            <div class="flex items-center gap-2 text-sm">
+                @yield('breadcrumb')
+            </div>
             <div class="flex items-center gap-3">
-
-                <div class="relative hidden sm:block">
-                    <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-[11px]"></i>
-                    <input
-                        type="search"
-                        class="search-input"
-                        placeholder="Buscar…"
-                        aria-label="Buscar en el sistema"
-                    >
-                </div>
-
-                <button class="icon-btn" aria-label="Notificaciones (3 nuevas)">
-                    <i class="fas fa-bell text-xs"></i>
-                    <span class="notif-dot" aria-hidden="true"></span>
-                </button>
-
-                <div style="width:1px; height:22px; background:var(--surface-4);"></div>
-
-                <button
-                    class="flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-[var(--surface-3)] focus-visible:outline-neon"
-                    aria-label="Menú de usuario: Admin"
-                    aria-haspopup="true"
-                >
-                    <div class="avatar" aria-hidden="true">A</div>
-                    <div class="hidden sm:flex flex-col items-start leading-none">
-                        <span style="font-size:13px; font-weight:500; color:var(--text-1);">Admin</span>
-                        <span style="font-size:10px; color:var(--text-3);">Superadministrador</span>
-                    </div>
-                    <i class="fas fa-chevron-down text-[9px] ml-1" style="color:var(--text-3);"></i>
-                </button>
+                <div class="w-px h-5 bg-[var(--surface-4)] mx-2"></div>
+                
+                <a href="{{ route('miperfil') ?? '#' }}" class="flex items-center gap-2 cursor-pointer tooltip transition-transform hover:scale-105" data-tip="Mi Perfil">
+                    @php $currentUser = auth()->user(); @endphp
+                    @if($currentUser && $currentUser->strImagen)
+                        <img src="{{ $currentUser->strImagen }}-/scale_crop/60x60/center/" class="w-8 h-8 rounded-full object-cover shadow-md border border-[var(--surface-4)]">
+                    @else
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white shadow-md border border-[var(--surface-4)]">
+                            {{ $currentUser ? strtoupper(substr($currentUser->strNombreUsuario ?? 'A', 0, 2)) : 'AD' }}
+                        </div>
+                    @endif
+                </a>
+                
             </div>
         </header>
 
+        {{-- ÁREA DE CONTENIDO --}}
+        <div class="flex-1 overflow-y-auto min-h-0 relative">
+            <div class="absolute inset-0">
+                @yield('content')
+            </div>
+        </div>
 
-        <main
-            id="content"
-            class="flex-1 overflow-y-auto p-6"
-            role="main"
-            aria-label="Contenido principal"
-        >
-            {{-- Flash messages --}}
-            @if(session('success'))
-                <div role="alert" style="
-                    display:flex; align-items:center; gap:10px;
-                    background:rgba(34,197,94,0.08);
-                    border:1px solid rgba(34,197,94,0.25);
-                    border-left:3px solid #22c55e;
-                    border-radius:8px; padding:12px 16px;
-                    margin-bottom:20px; font-size:13.5px; color:#86efac;
-                ">
-                    <i class="fas fa-circle-check" style="color:#22c55e;"></i>
-                    {{ session('success') }}
-                </div>
-            @endif
+    </main>
 
-            @if(session('error'))
-                <div role="alert" style="
-                    display:flex; align-items:center; gap:10px;
-                    background:rgba(255,23,68,0.08);
-                    border:1px solid var(--neon-border);
-                    border-left:3px solid var(--neon);
-                    border-radius:8px; padding:12px 16px;
-                    margin-bottom:20px; font-size:13.5px; color:#fca5a5;
-                ">
-                    <i class="fas fa-triangle-exclamation" style="color:var(--neon);"></i>
-                    {{ session('error') }}
-                </div>
-            @endif
+    {{-- 🌗 BOTÓN FLOTANTE --}}
+    <button onclick="toggleTheme()" class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-[var(--surface-3)] border border-[var(--surface-4)] shadow-lg flex items-center justify-center text-[var(--neon)] hover:scale-110 transition-transform z-50 tooltip" data-tip="Cambiar Tema">
+        <i id="themeIcon" class="fas fa-moon text-lg"></i>
+    </button>
 
-            @yield('content')
-        </main>
+    {{-- Toast global --}}
+    <div id="toast" class="toast">
+        <div id="toastIcon" class="flex-shrink-0"></div>
+        <div>
+            <p id="toastMsg" class="text-sm font-medium text-[var(--text-1)]"></p>
+            <p id="toastSub" class="text-xs text-[var(--text-3)] mt-0.5"></p>
+        </div>
+        <button onclick="hideToast()" class="ml-auto text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors flex-shrink-0">
+            <i class="fas fa-xmark text-xs"></i>
+        </button>
     </div>
 
+    @yield('scripts')
+
+    {{-- Scripts Globales --}}
+    <script>
+        // 1. CEREBRO DE PERMISOS (RBAC)
+        window.tienePermiso = function(nombreModulo, accionCrud) {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user_data'));
+                
+                if (!userData) return false; 
+                if (userData.perfil === 1) return true; // Super Admin siempre tiene acceso
+
+                if (userData.permisos && userData.permisos[nombreModulo]) {
+                    return userData.permisos[nombreModulo][accionCrud] == 1;
+                }
+                
+                return false;
+            } catch (e) {
+                console.error("Error leyendo permisos", e);
+                return false; 
+            }
+        };
+
+        // 2. APLICADOR VISUAL DE PERMISOS (Muestra/Oculta menús en el DOM)
+        window.aplicarPermisosVisuales = function() {
+            document.querySelectorAll('#sidebarNav [data-modulo]').forEach(enlace => {
+                const modulo = enlace.getAttribute('data-modulo');
+                
+                // Si ya no tiene permiso de Consulta, ocultamos el botón del menú
+                if (!window.tienePermiso(modulo, 'bitConsulta')) {
+                    enlace.style.display = 'none';
+                } else {
+                    enlace.style.display = 'flex'; // Lo restaura si le devuelven el permiso
+                }
+            });
+        };
+
+        // Ejecutar al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            window.aplicarPermisosVisuales();
+        });
+
+        // 3. 🚀 MOTOR GLOBAL DE PERMISOS EN TIEMPO REAL 🚀
+        // Se ejecuta cada 5 segundos para verificar si el superadmin nos cambió los permisos
+        setInterval(async () => {
+            try {
+                const userDataStr = localStorage.getItem('user_data');
+                if (!userDataStr) return;
+                
+                let userData = JSON.parse(userDataStr);
+                
+                // Si es el Admin Maestro, no necesita estar revisando, él es dios.
+                if (userData.perfil === 1) return;
+
+                // Paso A: Obtener la lista de módulos para cruzar los IDs con los Nombres
+                const resCat = await fetch('/api/permisos/catalogos', { headers: { 'Accept': 'application/json' }});
+                if (!resCat.ok) return;
+                const dataCat = await resCat.json();
+                const modulos = dataCat.modulos || [];
+
+                // Paso B: Obtener los permisos frescos del usuario en la base de datos
+                const resPerm = await fetch(`/api/permisos?perfil=${userData.perfil}`, { headers: { 'Accept': 'application/json' }});
+                if (!resPerm.ok) return;
+                const dataPerm = await resPerm.json();
+                const items = Array.isArray(dataPerm) ? dataPerm : (dataPerm.data ?? []);
+
+                // Paso C: Reconstruir el objeto de permisos en el mismo formato que usa localStorage
+                let nuevosPermisos = {};
+                items.forEach(item => {
+                    const mod = modulos.find(m => m.id === item.idModulo);
+                    if (mod) {
+                        nuevosPermisos[mod.strNombreModulo] = {
+                            bitConsulta: item.bitConsulta,
+                            bitAgregar: item.bitAgregar,
+                            bitEditar: item.bitEditar,
+                            bitEliminar: item.bitEliminar,
+                            bitDetalle: item.bitDetalle
+                        };
+                    }
+                });
+
+                // Paso D: Comparar si hubo un cambio en la base de datos
+                if (JSON.stringify(userData.permisos) !== JSON.stringify(nuevosPermisos)) {
+                    
+                    // Si hubo cambio, guardamos los nuevos datos en el navegador
+                    userData.permisos = nuevosPermisos;
+                    localStorage.setItem('user_data', JSON.stringify(userData));
+                    
+                    // Actualizamos el menú lateral de inmediato
+                    window.aplicarPermisosVisuales();
+                    
+                    // 🛡️ EL EXPULSOR DE EMERGENCIA:
+                    // Verificamos si el usuario está metido en un módulo al que le acaban de quitar acceso
+                    const activeMenu = document.querySelector('#sidebarNav .nav-item.active');
+                    if (activeMenu) {
+                        const currentModulo = activeMenu.getAttribute('data-modulo');
+                        if (currentModulo && !window.tienePermiso(currentModulo, 'bitConsulta')) {
+                            // Le mostramos un mensaje sutil y lo pateamos al dashboard
+                            if(window.showToast) window.showToast('Privilegios actualizados por el Administrador. Redirigiendo...', 'info');
+                            setTimeout(() => {
+                                window.location.href = "{{ route('home') }}";
+                            }, 1500);
+                        }
+                    }
+                }
+            } catch (e) {
+                // Fallo silencioso si hay problemas de red
+            }
+        }, 5000);
+
+        // 4. LÓGICA DEL TOAST
+        let _toastTimer;
+        window.showToast = (msg, tipo = 'success', sub = '') => {
+            const t   = document.getElementById('toast');
+            const map = {
+                success: '<i class="fas fa-circle-check text-green-400 text-lg"></i>',
+                error:   '<i class="fas fa-circle-xmark text-red-400 text-lg"></i>',
+                info:    '<i class="fas fa-circle-info text-blue-400 text-lg"></i>',
+            };
+            t.className = `toast ${tipo}`;
+            document.getElementById('toastIcon').innerHTML = map[tipo] ?? map.info;
+            document.getElementById('toastMsg').textContent  = msg;
+            document.getElementById('toastSub').textContent  = sub;
+            clearTimeout(_toastTimer);
+            t.classList.add('show');
+            _toastTimer = setTimeout(() => t.classList.remove('show'), 4500);
+        };
+        window.hideToast = () => document.getElementById('toast').classList.remove('show');
+
+        // 5. TEMA CLARO/OSCURO
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light'; 
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateIcon(savedTheme);
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const nextTheme = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            localStorage.setItem('theme', nextTheme);
+            updateIcon(nextTheme);
+        }
+
+        function updateIcon(theme) {
+            const icon = document.getElementById('themeIcon');
+            if (theme === 'dark') {
+                icon.className = 'fas fa-sun text-yellow-400 text-lg';
+            } else {
+                icon.className = 'fas fa-moon text-[var(--neon)] text-lg';
+            }
+        }
+
+        initTheme();
+    </script>
 </body>
 </html>

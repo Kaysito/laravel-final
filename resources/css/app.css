@@ -9,3 +9,45 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+/* ========================================================= */
+/* 🎨 VARIABLES DE TEMA (CLARO POR DEFECTO / OSCURO TOGGLE)  */
+/* ========================================================= */
+@layer base {
+    /* ☀️ DEFAULT: TEMA CLARO (Blancos y rojizos muy suaves) */
+    :root {
+        --surface-1: #ffffff;         /* Fondo principal puro */
+        --surface-2: #fdf8f8;         /* Tarjetas (blanco con toque cálido rojizo) */
+        --surface-3: #f5ebeb;         /* Inputs y hovers (rojizo pastel) */
+        --surface-4: #e8dada;         /* Bordes suaves */
+        --surface-5: #d4c1c1;         /* Bordes más marcados */
+        
+        --text-1: #2d1b1b;            /* Texto principal (Casi negro con tinte rojizo) */
+        --text-2: #5c4343;            /* Texto secundario */
+        --text-3: #8a6d6d;            /* Texto apagado */
+        
+        --neon: #e63757;              /* Tu rojo acento característico */
+        --neon-border: rgba(230, 55, 87, 0.3);
+        --neon-muted: rgba(230, 55, 87, 0.1);
+    }
+
+    /* 🌙 TEMA OSCURO (Tus colores originales) */
+    [data-theme="dark"] {
+        --surface-1: #0a0a0f;
+        --surface-2: #111118;
+        --surface-3: #18181f;
+        --surface-4: #22222c;
+        --surface-5: #2a2a35;
+        
+        --text-1: #f0f0f5;
+        --text-2: #a0a0b0;
+        --text-3: #60607a;
+    }
+
+    /* Aplicar colores al body para que todo el lienzo cambie suavemente */
+    body {
+        background-color: var(--surface-1);
+        color: var(--text-1);
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+}

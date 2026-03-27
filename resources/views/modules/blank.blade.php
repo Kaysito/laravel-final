@@ -1,57 +1,146 @@
 @extends('layouts.app')
 
-@section('title', $title)
-@section('breadcrumb', $breadcrumb)
+@section('title', $title ?? 'Módulo del Sistema')
+
+@section('breadcrumb')
+    <a href="{{ route('home') }}" class="text-[var(--text-3)] hover:text-[var(--neon)] transition-colors tooltip" data-tip="Ir al Dashboard">
+        <i class="fas fa-home text-xs"></i>
+    </a>
+    <i class="fas fa-chevron-right text-[var(--surface-4)] text-[10px] mx-2"></i>
+    <span class="text-[var(--text-3)]">Navegación</span>
+    <i class="fas fa-chevron-right text-[var(--surface-4)] text-[10px] mx-2"></i>
+    <span class="text-[var(--text-1)] font-medium">{{ $title }}</span>
+@endsection
 
 @section('content')
-<div class="bg-[var(--surface-2)] rounded-xl border border-[var(--surface-4)] shadow-card p-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div>
-            <h2 class="text-xl font-bold text-[var(--text-1)]">Vista Estática: {{ $title }}</h2>
-            <p class="text-sm text-[var(--text-3)] mt-1">Esta pantalla muestra la interfaz CRUD sin conexión a base de datos.</p>
-        </div>
-        <button class="flex items-center gap-2 bg-neon-dark hover:bg-neon text-white font-medium py-2 px-5 rounded-lg transition-all duration-300 shadow-neon-sm hover:shadow-neon-md border border-neon-border">
-            <i class="fas fa-plus text-sm"></i> <span>Crear Registro</span>
-        </button>
-    </div>
+<div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 fade-in">
+    <div class="max-w-7xl mx-auto">
 
-    <div class="mb-6 flex space-x-3">
-        <div class="relative w-full sm:w-1/3">
-            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-sm"></i>
-            <input type="text" placeholder="Búsqueda estática..." class="w-full pl-10 pr-4 py-2.5 bg-[var(--surface-3)] border border-[var(--surface-4)] text-[var(--text-1)] placeholder-[var(--text-3)] rounded-lg focus:outline-none focus:border-[var(--neon-border)] focus:shadow-[0_0_0_3px_rgba(255,23,68,0.1)] transition-all text-sm">
-        </div>
-    </div>
+        {{-- Contenedor Principal (Tarjeta) --}}
+        <div class="bg-[var(--surface-2)] border border-[var(--surface-4)] rounded-2xl shadow-lg overflow-hidden">
+            
+            {{-- Encabezado del Módulo --}}
+            <div class="px-6 py-5 flex items-center gap-3 border-b border-[var(--surface-4)] bg-[var(--surface-2)]">
+                <i class="far fa-file-lines text-blue-400 text-xl"></i>
+                <h2 class="text-xl font-bold text-[var(--text-1)]">{{ $title }}</h2>
+            </div>
 
-    <div class="overflow-x-auto rounded-lg border border-[var(--surface-4)]">
-        <table class="min-w-full text-left text-sm whitespace-nowrap">
-            <thead class="bg-[var(--surface-3)] border-b border-[var(--surface-4)]">
-                <tr>
-                    <th class="py-3 px-5 text-[10px] font-mono tracking-widest text-[var(--text-3)] uppercase">Dato de Ejemplo</th>
-                    <th class="py-3 px-5 text-[10px] font-mono tracking-widest text-[var(--text-3)] uppercase text-center">Acciones</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-[var(--surface-4)]">
-                <tr class="hover:bg-[var(--surface-3)] transition-colors duration-150 group">
-                    <td class="py-3 px-5 text-[var(--text-2)]">Información de prueba 1</td>
-                    <td class="py-3 px-5 text-center">
-                        <div class="flex justify-center items-center gap-3 opacity-70 group-hover:opacity-100 transition-opacity">
-                            <button class="text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors" title="Consultar Detalle"><i class="fas fa-eye"></i></button>
-                            <button class="text-[var(--text-3)] hover:text-blue-400 transition-colors" title="Editar"><i class="fas fa-pen-to-square"></i></button>
-                            <button class="text-[var(--text-3)] hover:text-[var(--neon)] transition-colors" title="Eliminar"><i class="fas fa-trash-can"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+            {{-- Tabla Estática --}}
+            <div class="overflow-x-auto bg-[var(--surface-1)]">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-[var(--surface-2)] border-b border-[var(--surface-4)]">
+                        <tr>
+                            <th class="py-4 px-6 font-bold text-[var(--text-1)]">#</th>
+                            <th class="py-4 px-6 font-bold text-[var(--text-1)]">ID</th>
+                            <th class="py-4 px-6 font-bold text-[var(--text-1)]">Nombre</th>
+                            <th class="py-4 px-6 font-bold text-[var(--text-1)]">Descripción</th>
+                            <th class="py-4 px-6 font-bold text-[var(--text-1)]">Fecha</th>
+                            <th class="py-4 px-6 font-bold text-[var(--text-1)] text-center">Estado</th>
+                            <th class="py-4 px-6 font-bold text-[var(--text-1)] text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[var(--surface-4)] text-[var(--text-2)]">
+                        
+                        {{-- Fila 1 --}}
+                        <tr class="hover:bg-[var(--surface-3)] transition-colors">
+                            <td class="py-4 px-6">1</td>
+                            <td class="py-4 px-6">1</td>
+                            <td class="py-4 px-6 font-bold text-[var(--text-1)]">Elemento Alpha</td>
+                            <td class="py-4 px-6">Descripción del elemento alpha con datos de ejemplo</td>
+                            <td class="py-4 px-6">2025-01-15</td>
+                            <td class="py-4 px-6 text-center">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold border bg-green-500/10 text-green-500 border-green-500/20">Activo</span>
+                            </td>
+                            <td class="py-4 px-6 text-center">
+                                <button class="text-blue-400 hover:text-blue-300 transition-colors tooltip" data-tip="Ver"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
 
-    <div class="mt-5 flex flex-col sm:flex-row justify-between items-center text-sm gap-4">
-        <span class="text-[var(--text-3)]">Mostrando <span class="text-[var(--text-1)] font-medium">1</span> a <span class="text-[var(--text-1)] font-medium">5</span> de <span class="text-[var(--text-1)] font-medium">5</span> registros estáticos</span>
-        <div class="flex items-center space-x-1">
-            <button class="px-3 py-1.5 rounded-md border border-[var(--surface-4)] bg-[var(--surface-2)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-colors"><i class="fas fa-chevron-left text-xs"></i></button>
-            <button class="px-3 py-1.5 rounded-md border border-neon-border bg-neon-muted text-[var(--neon)] font-medium transition-colors">1</button>
-            <button class="px-3 py-1.5 rounded-md border border-[var(--surface-4)] bg-[var(--surface-2)] text-[var(--text-3)] hover:text-[var(--text-1)] hover:bg-[var(--surface-3)] transition-colors"><i class="fas fa-chevron-right text-xs"></i></button>
+                        {{-- Fila 2 --}}
+                        <tr class="hover:bg-[var(--surface-3)] transition-colors">
+                            <td class="py-4 px-6">2</td>
+                            <td class="py-4 px-6">2</td>
+                            <td class="py-4 px-6 font-bold text-[var(--text-1)]">Elemento Beta</td>
+                            <td class="py-4 px-6">Descripción del elemento beta con datos de ejemplo</td>
+                            <td class="py-4 px-6">2025-02-20</td>
+                            <td class="py-4 px-6 text-center">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold border bg-green-500/10 text-green-500 border-green-500/20">Activo</span>
+                            </td>
+                            <td class="py-4 px-6 text-center">
+                                <button class="text-blue-400 hover:text-blue-300 transition-colors tooltip" data-tip="Ver"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
+
+                        {{-- Fila 3 --}}
+                        <tr class="hover:bg-[var(--surface-3)] transition-colors">
+                            <td class="py-4 px-6">3</td>
+                            <td class="py-4 px-6">3</td>
+                            <td class="py-4 px-6 font-bold text-[var(--text-1)]">Elemento Gamma</td>
+                            <td class="py-4 px-6">Descripción del elemento gamma con datos de ejemplo</td>
+                            <td class="py-4 px-6">2025-03-10</td>
+                            <td class="py-4 px-6 text-center">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold border bg-red-500/10 text-red-500 border-red-500/20">Inactivo</span>
+                            </td>
+                            <td class="py-4 px-6 text-center">
+                                <button class="text-blue-400 hover:text-blue-300 transition-colors tooltip" data-tip="Ver"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
+
+                        {{-- Fila 4 --}}
+                        <tr class="hover:bg-[var(--surface-3)] transition-colors">
+                            <td class="py-4 px-6">4</td>
+                            <td class="py-4 px-6">4</td>
+                            <td class="py-4 px-6 font-bold text-[var(--text-1)]">Elemento Delta</td>
+                            <td class="py-4 px-6">Descripción del elemento delta con datos de ejemplo</td>
+                            <td class="py-4 px-6">2025-04-05</td>
+                            <td class="py-4 px-6 text-center">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold border bg-green-500/10 text-green-500 border-green-500/20">Activo</span>
+                            </td>
+                            <td class="py-4 px-6 text-center">
+                                <button class="text-blue-400 hover:text-blue-300 transition-colors tooltip" data-tip="Ver"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
+
+                        {{-- Fila 5 --}}
+                        <tr class="hover:bg-[var(--surface-3)] transition-colors">
+                            <td class="py-4 px-6">5</td>
+                            <td class="py-4 px-6">5</td>
+                            <td class="py-4 px-6 font-bold text-[var(--text-1)]">Elemento Epsilon</td>
+                            <td class="py-4 px-6">Descripción del elemento epsilon con datos de ejemplo</td>
+                            <td class="py-4 px-6">2025-05-18</td>
+                            <td class="py-4 px-6 text-center">
+                                <span class="px-3 py-1 rounded-full text-[10px] font-bold border bg-green-500/10 text-green-500 border-green-500/20">Activo</span>
+                            </td>
+                            <td class="py-4 px-6 text-center">
+                                <button class="text-blue-400 hover:text-blue-300 transition-colors tooltip" data-tip="Ver"><i class="fas fa-eye"></i></button>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Paginación Estática --}}
+            <div class="py-5 flex justify-center items-center gap-2 border-t border-[var(--surface-4)] bg-[var(--surface-2)]">
+                <button class="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-3)] hover:bg-[var(--surface-3)] transition-colors cursor-not-allowed opacity-50">
+                    <i class="fas fa-chevron-left text-[10px]"></i>
+                </button>
+                
+                <button class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-sm transition-colors">
+                    1
+                </button>
+                
+                <button class="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-2)] hover:bg-[var(--surface-3)] font-medium text-xs transition-colors">
+                    2
+                </button>
+                
+                <button class="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-3)] hover:bg-[var(--surface-3)] transition-colors cursor-pointer">
+                    <i class="fas fa-chevron-right text-[10px]"></i>
+                </button>
+            </div>
+
         </div>
+
     </div>
 </div>
 @endsection

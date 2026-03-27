@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\DB;
 use App\Models\Usuario;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -15,49 +16,66 @@ class AuthController extends Controller
         $request->validate([
             'usuario' => 'required|string',
             'password' => 'required|string',
-            'remember' => 'boolean' // 👈 Recibimos si el usuario marcó la casilla
+            'remember' => 'boolean'
         ]);
 
-        $user = Usuario::where('strNombreUsuario', $request->usuario)->first();
+        $user = Usuario::where('strNombreUsuario', $request->usuario)
+                    ->orWhere('strCorreo', $request->usuario)
+                    ->first();
         
         if (!$user) {
-            return response()->json(['error' => '❌ BLOQUEO: El usuario NO existe.'], 401);
+            return response()->json(['error' => 'Las credenciales ingresadas no coinciden.'], 401);
         }
 
         if (!Hash::check($request->password, $user->strPwd)) {
-            return response()->json(['error' => '❌ BLOQUEO: Contraseña incorrecta.'], 401);
+            return response()->json(['error' => 'La contraseña es incorrecta.'], 401);
         }
 
         if ($user->idEstadoUsuario != 1) {
-            return response()->json(['error' => '❌ BLOQUEO: Usuario inactivo.'], 403);
+            if (is_null($user->correo_verificado_at)) {
+                return response()->json(['error' => 'Tu cuenta no está verificada. Revisa tu correo.'], 403);
+            }
+            return response()->json(['error' => 'Tu cuenta ha sido desactivada.'], 403);
         }
 
-        // ⏱️ LÓGICA DE TIEMPO (REMEMBER ME)
-        // Si marcó recordar, le damos 30 días (43200 min). Si no, 1 hora (60 min).
+        // 👇 AQUI ESTÁ LA CORRECCIÓN: Usamos los nombres REALES de tu base de datos 👇
+        $permisos = DB::table('permisos_perfil')
+            ->join('modulos', 'permisos_perfil.idModulo', '=', 'modulos.id')
+            ->where('idPerfil', $user->idPerfil)
+            ->select(
+                'modulos.strNombreModulo as modulo',
+                'bitConsulta',
+                'bitAgregar',
+                'bitEditar',
+                'bitEliminar',
+                'bitDetalle'
+            )
+            ->get()
+            ->keyBy('modulo'); 
+
         $minutos = $request->remember ? 43200 : 60;
-        
-        // Le indicamos al motor JWT cuánto debe durar este token específico
         JWTAuth::factory()->setTTL($minutos);
-        $token = JWTAuth::fromUser($user);
+
+        $token = JWTAuth::customClaims(['permissions' => $permisos])->fromUser($user);
 
         return response()->json([
             'token' => $token,
             'redirect' => '/home',
-            'expires_in' => $minutos // Le mandamos el tiempo al Frontend
+            'expires_in' => $minutos,
+            'user' => [
+                'nombre' => $user->strNombreUsuario,
+                'perfil' => $user->idPerfil,
+                'permisos' => $permisos 
+            ]
         ]);
     }
 
-    // 🚪 LÓGICA DE CERRAR SESIÓN
     public function logout()
     {
         try {
-            // "Quemamos" el token actual para que quede inservible en el servidor
             JWTAuth::invalidate(JWTAuth::getToken());
-        } catch (\Exception $e) {
-            // Si el token ya había expirado, lo ignoramos y seguimos
-        }
+        } catch (\Exception $e) {}
 
-        // Destruimos la cookie en el navegador y mandamos al login
         return redirect('/')->withCookie(Cookie::forget('jwt_token'));
     }
 }

@@ -18,9 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'jwt_token',
         ]);
 
-        // Registramos el apodo (alias) para usarlo en las rutas
+        // Registramos los apodos (alias) para usarlos en las rutas
         $middleware->alias([
             'jwt.verify' => \App\Http\Middleware\JwtMiddleware::class,
+            'permiso'    => \App\Http\Middleware\VerificarPermiso::class, // 👈 NUESTRO NUEVO CANDADO RBAC
         ]);
         
     })
