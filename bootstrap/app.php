@@ -20,8 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Registramos los apodos (alias) para usarlos en las rutas
         $middleware->alias([
-            'jwt.verify' => \App\Http\Middleware\JwtMiddleware::class,
-            'permiso'    => \App\Http\Middleware\VerificarPermiso::class, // 👈 NUESTRO NUEVO CANDADO RBAC
+            'jwt.verify'     => \App\Http\Middleware\JwtMiddleware::class,
+            'permiso'        => \App\Http\Middleware\VerificarPermiso::class, // NUESTRO CANDADO RBAC
+            'single.session' => \App\Http\Middleware\CheckSingleSession::class, // 👈 NUEVO: Bloquea doble sesión
         ]);
         
     })

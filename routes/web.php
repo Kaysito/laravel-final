@@ -24,8 +24,9 @@ Route::get('/verificar-cuenta/{id}/{codigo}', [UsuarioController::class, 'verifi
 
 // =========================================================
 // 🛡️ ZONA SEGURA: Todo aquí adentro requiere Token JWT
+// y además verifica que no haya doble sesión ('single.session')
 // =========================================================
-Route::middleware(['jwt.verify'])->group(function () {
+Route::middleware(['jwt.verify', 'single.session'])->group(function () {
     
     // 👇 Dashboard Central 👇
     Route::get('/home', function () { 

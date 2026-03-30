@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use App\Models\Usuario;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use Illuminate\Support\Str; // 👈 IMPORTANTE: Añadimos la clase Str para generar códigos
 
 class AuthController extends Controller
 {
@@ -38,7 +39,6 @@ class AuthController extends Controller
             return response()->json(['error' => 'Tu cuenta ha sido desactivada.'], 403);
         }
 
-        // 👇 AQUI ESTÁ LA CORRECCIÓN: Usamos los nombres REALES de tu base de datos 👇
         $permisos = DB::table('permisos_perfil')
             ->join('modulos', 'permisos_perfil.idModulo', '=', 'modulos.id')
             ->where('idPerfil', $user->idPerfil)
@@ -53,10 +53,19 @@ class AuthController extends Controller
             ->get()
             ->keyBy('modulo'); 
 
+        // 👇 1. GENERAMOS Y GUARDAMOS EL ID DE SESIÓN ÚNICO 👇
+        $newSessionId = Str::random(40);
+        $user->active_session_id = $newSessionId;
+        $user->save();
+
         $minutos = $request->remember ? 43200 : 60;
         JWTAuth::factory()->setTTL($minutos);
 
-        $token = JWTAuth::customClaims(['permissions' => $permisos])->fromUser($user);
+        // 👇 2. METEMOS EL 'sid' (Session ID) DENTRO DEL TOKEN 👇
+        $token = JWTAuth::customClaims([
+            'permissions' => $permisos,
+            'sid' => $newSessionId // Añadimos la firma de la sesión al JWT
+        ])->fromUser($user);
 
         return response()->json([
             'token' => $token,
@@ -73,6 +82,11 @@ class AuthController extends Controller
     public function logout()
     {
         try {
+            // 👇 3. LIMPIAMOS LA SESIÓN EN LA DB AL SALIR (Opcional pero recomendado) 👇
+            if ($user = JWTAuth::user()) {
+                $user->active_session_id = null;
+                $user->save();
+            }
             JWTAuth::invalidate(JWTAuth::getToken());
         } catch (\Exception $e) {}
 

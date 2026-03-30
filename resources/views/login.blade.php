@@ -8,11 +8,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    {{-- 🤖 SCRIPT DE GOOGLE RECAPTCHA 🤖 --}}
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
     <style>
         *, *::before, *::after { box-sizing: border-box; }
 
-        /* ☀️ DEFAULT: TEMA CLARO (Misma paleta que el Dashboard) */
+        /* ☀️ DEFAULT: TEMA CLARO */
         :root {
             --surface-1: #ffffff;
             --surface-2: #fdf8f8;
@@ -62,7 +65,7 @@
         }
 
         /* ══════════════════════════════════════
-           LEFT PANEL — logo centrado, minimal
+           LEFT PANEL 
         ══════════════════════════════════════ */
         .brand-panel {
             position: relative;
@@ -76,7 +79,6 @@
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
-        /* Cuadrícula sutil de fondo */
         .brand-panel::before {
             content: '';
             position: absolute; inset: 0;
@@ -89,7 +91,6 @@
             transition: background-image 0.3s ease;
         }
 
-        /* Orb de glow detrás del logo */
         .brand-orb {
             position: absolute;
             width: 360px; height: 360px;
@@ -98,7 +99,6 @@
             pointer-events: none;
         }
 
-        /* Logo container */
         .logo-wrap {
             position: relative;
             z-index: 1;
@@ -108,7 +108,6 @@
             gap: 28px;
         }
 
-        /* SVG Laravel */
         .laravel-svg {
             width: 90px; height: 90px;
             filter: drop-shadow(0 0 22px rgba(230,55,87,0.45))
@@ -129,7 +128,6 @@
             100% { filter: drop-shadow(0 0 30px rgba(230,55,87,0.60)) drop-shadow(0 0 70px rgba(230,55,87,0.25)); }
         }
 
-        /* Anillos orbitales decorativos */
         .orbit-ring {
             position: absolute;
             border-radius: 50%;
@@ -165,7 +163,6 @@
             to   { transform: translate(-50%, -50%) rotate(360deg); }
         }
 
-        /* Punto orbitando en el ring externo */
         .orbit-dot {
             position: absolute;
             width: 5px; height: 5px;
@@ -177,7 +174,6 @@
             transform: translateX(-50%);
         }
 
-        /* Wordmark y tagline */
         .brand-wordmark {
             text-align: center;
             animation: fadeUp 1s ease 0.2s both;
@@ -201,7 +197,6 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* Footer de panel */
         .brand-footer {
             position: absolute; bottom: 24px;
             font-family: 'Space Mono', monospace;
@@ -211,7 +206,7 @@
         }
 
         /* ══════════════════════════════════════
-           RIGHT PANEL — form
+           RIGHT PANEL
         ══════════════════════════════════════ */
         .form-panel {
             position: relative;
@@ -311,20 +306,6 @@
             box-shadow: 0 0 0 3px var(--neon-muted);
         }
         .input-wrap:focus-within .input-icon { color: var(--neon); }
-
-        /* reCaptcha */
-        .captcha-box {
-            width: 100%;
-            background: var(--surface-3);
-            border: 1px dashed var(--surface-4);
-            border-radius: 9px;
-            height: 64px;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            color: var(--text-3); font-size: 12.5px;
-            margin-bottom: 20px;
-            transition: border-color 0.15s;
-        }
-        .captcha-box:hover { border-color: var(--neon-border); }
 
         /* Remember */
         .remember-row {
@@ -606,12 +587,9 @@
                     <label for="remember" class="remember-label">Mantener sesión iniciada</label>
                 </div>
 
-                <div class="captcha-box" aria-label="Verificación reCAPTCHA">
-                    <i class="fas fa-robot" style="font-size:18px;color:var(--text-3);"></i>
-                    <div>
-                        <div style="font-size:12.5px;color:var(--text-2);">No soy un robot</div>
-                        <div style="font-size:10px;margin-top:2px;color:var(--text-3);">reCAPTCHA · Privacidad · Términos</div>
-                    </div>
+                {{-- 🛡️ WIDGET OFICIAL DE GOOGLE RECAPTCHA 🛡️ --}}
+                <div class="flex justify-center mb-5">
+                    <div class="g-recaptcha" data-sitekey="{{ env('RECAPTCHA_SITE_KEY') }}"></div>
                 </div>
 
                 <button type="submit" class="btn-submit">
@@ -733,22 +711,25 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
     .then(result => {
         if (!result) return;
         
-        // 1. Errores personalizados (Contraseña incorrecta, Inactivo, etc.)
+        // 1. Errores personalizados (Contraseña incorrecta, Inactivo, Captcha fallido)
         if (result.error) {
             errorMessage.textContent = result.error;
             errorBox.style.display = 'flex';
             btn.innerHTML = originalText;
             btn.disabled = false;
+            // 🔄 Reiniciamos el Captcha para que el usuario pueda intentar de nuevo
+            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         } 
         // 2. Errores nativos de validación de Laravel (Campos vacíos)
         else if (result.errors) {
-            // Extraemos el primer mensaje de error del objeto 'errors'
             errorMessage.textContent = Object.values(result.errors)[0][0]; 
             errorBox.style.display = 'flex';
             btn.innerHTML = originalText;
             btn.disabled = false;
+            // 🔄 Reiniciamos el Captcha
+            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         } 
-        // 3. ¡Éxito! Guardamos token y datos del usuario (Permisos RBAC)
+        // 3. ¡Éxito! Guardamos token y redirigimos
         else if (result.token) {
             const maxAge = result.expires_in ? (result.expires_in * 60) : 3600;
             document.cookie = `jwt_token=${result.token}; path=/; max-age=${maxAge}; SameSite=Strict`;
@@ -761,6 +742,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
             errorBox.style.display = 'flex';
             btn.innerHTML = originalText;
             btn.disabled = false;
+            if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         }
     })
     .catch(error => {
@@ -768,6 +750,7 @@ document.getElementById('loginForm').addEventListener('submit', function(e) {
         errorBox.style.display = 'flex';
         btn.innerHTML = originalText;
         btn.disabled = false;
+        if (typeof grecaptcha !== 'undefined') grecaptcha.reset();
         console.error("Detalle de fetch:", error);
     });
 });
