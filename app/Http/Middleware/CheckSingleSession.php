@@ -6,39 +6,45 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenExpiredException;
+use PHPOpenSourceSaver\JWTAuth\Exceptions\TokenInvalidException;
 
 class CheckSingleSession
 {
     public function handle(Request $request, Closure $next)
     {
-        // Verificamos si hay un usuario autenticado
-        if (Auth::check()) {
-            $user = Auth::user();
-            
-            try {
-                // Extraemos el 'sid' que metimos dentro del token JWT
-                $payload = JWTAuth::parseToken()->getPayload();
-                $tokenSid = $payload->get('sid');
-
-                // ¿El código del token es distinto al de la base de datos?
-                if ($user->active_session_id !== $tokenSid) {
-                    
-                    // Invalidamos este token para que no se pueda volver a usar
-                    JWTAuth::invalidate(JWTAuth::getToken());
-                    Auth::logout();
-                    
-                    return response()->json([
-                        'error' => 'Tu sesión ha sido cerrada porque iniciaste sesión en otro dispositivo.',
-                        'code' => 'SESSION_EXPIRED' // Un código útil para tu frontend
-                    ], 401);
-                }
-                
-            } catch (\Exception $e) {
-                return response()->json(['error' => 'Token inválido o manipulado.'], 401);
+        try {
+            // Intentamos obtener al usuario a través del token
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
+                return response()->json(['error' => 'Usuario no encontrado.'], 401);
             }
+
+            // Extraemos el payload
+            $payload = JWTAuth::parseToken()->getPayload();
+            $tokenSid = $payload->get('sid');
+
+            // COMPARACIÓN CRÍTICA:
+            // Usamos != en lugar de !== por si uno es null y el otro string vacío
+            if ($user->active_session_id != $tokenSid) {
+                
+                // Si tienes el token en cookie, podrías intentar limpiarla aquí
+                Auth::logout();
+                
+                return response()->json([
+                    'error' => 'Tu sesión ha sido abierta en otro dispositivo.',
+                    'code' => 'SESSION_DUPLICATED'
+                ], 401);
+            }
+
+        } catch (TokenExpiredException $e) {
+            return response()->json(['error' => 'Tu sesión ha expirado.'], 401);
+        } catch (TokenInvalidException $e) {
+            return response()->json(['error' => 'Token inválido o manipulado.'], 401);
+        } catch (\Exception $e) {
+            // Si llega aquí, es porque no hay token en la petición
+            return response()->json(['error' => 'No se encontró el token de acceso.'], 401);
         }
 
-        // Si todo está correcto, le permitimos pasar
         return $next($request);
     }
 }
