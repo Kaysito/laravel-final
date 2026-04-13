@@ -65,12 +65,22 @@
         ::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: var(--surface-5); }
 
-        /* ── Sidebar ── */
+        /* ── Sidebar & Menús Desplegables ── */
         .sidebar { background: var(--surface-2); border-right: 1px solid var(--surface-4); transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .nav-item { color: var(--text-2); transition: all 0.15s ease; border-radius: 8px; }
         .nav-item:hover { background: var(--surface-3); color: var(--text-1); }
         .nav-item.active { background: var(--neon-muted); color: var(--neon); border: 1px solid var(--neon-border); }
         .nav-item.active .nav-icon { color: var(--neon); }
+
+        /* Botón del Submenú */
+        .submenu-btn { width: 100%; display: flex; items-center; justify-content: space-between; padding: 0.625rem 0.75rem; color: var(--text-2); font-size: 0.875rem; border-radius: 8px; transition: all 0.15s; cursor: pointer; }
+        .submenu-btn:hover { background: var(--surface-3); color: var(--text-1); }
+        .submenu-icon { transition: transform 0.3s ease; }
+        
+        /* Contenedor del Submenú (Efecto Slider) */
+        .submenu-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; }
+        .submenu-content.open { max-height: 500px; /* Suficiente para que abra suavemente */ }
+        .submenu-btn.open .submenu-icon { transform: rotate(180deg); }
 
         /* ── Card & Inputs ── */
         .card { background: var(--surface-2); border: 1px solid var(--surface-4); border-radius: 14px; transition: background-color 0.3s ease, border-color 0.3s ease;}
@@ -100,13 +110,13 @@
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    {{-- ─── BACKDROP MÓVIL (Oscurece el fondo al abrir el menú) ─── --}}
+    {{-- ─── BACKDROP MÓVIL ─── --}}
     <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 hidden opacity-0 transition-opacity duration-300 md:hidden"></div>
 
     {{-- ─── SIDEBAR ──────────────────────────────────────────────── --}}
     <aside id="mainSidebar" class="sidebar fixed md:relative w-64 md:w-60 flex-shrink-0 flex flex-col h-full z-30 transform -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
 
-        {{-- Logo & Botón Cerrar (Solo Móvil) --}}
+        {{-- Logo --}}
         <div class="px-5 py-5 flex items-center justify-between border-b border-[var(--surface-4)]">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg bg-[var(--neon-dark)] flex items-center justify-center">
@@ -123,70 +133,87 @@
         </div>
 
         {{-- Nav --}}
-        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" id="sidebarNav">
-            <p class="px-2 mb-2 text-[9px] font-mono tracking-widest text-[var(--text-3)] uppercase">Principal</p>
-
+        <nav class="flex-1 px-3 py-4 space-y-2 overflow-y-auto" id="sidebarNav">
+            
+            {{-- DASHBOARD (Fijo) --}}
             <a href="{{ route('home') }}"
                class="nav-item {{ request()->routeIs('home') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
                 <i class="nav-icon fas fa-gauge-high w-4 text-center"></i>
                 <span>Dashboard</span>
             </a>
 
-            <div class="section-divider my-3"></div>
+            <div class="section-divider my-2"></div>
             
-            <p class="px-2 mb-2 text-[9px] font-mono tracking-widest text-[var(--text-3)] uppercase">Seguridad</p>
+            {{-- GRUPO: SEGURIDAD --}}
+            <div class="menu-group">
+                <button onclick="toggleSubmenu('submenu-seguridad', this)" class="submenu-btn">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-shield-halved w-4 text-center text-[var(--text-3)]"></i>
+                        <span class="font-medium">Seguridad</span>
+                    </div>
+                    <i class="fas fa-chevron-down submenu-icon text-xs"></i>
+                </button>
+                <div id="submenu-seguridad" class="submenu-content pl-9 mt-1 space-y-1">
+                    <a href="{{ route('perfil.index') }}" data-modulo="Perfil"
+                       class="nav-item {{ request()->routeIs('perfil.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                        <span>Perfiles</span>
+                    </a>
+                    <a href="{{ route('modulo.index') }}" data-modulo="Modulo"
+                       class="nav-item {{ request()->routeIs('modulo.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                        <span>Módulos</span>
+                    </a>
+                    <a href="{{ route('permisos.index') }}" data-modulo="Permisos-Perfil"
+                       class="nav-item {{ request()->routeIs('permisos.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                        <span>Permisos</span>
+                    </a>
+                    <a href="{{ route('usuarios.index') }}" data-modulo="Usuarios"
+                       class="nav-item {{ request()->routeIs('usuarios.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                        <span>Usuarios</span>
+                    </a>
+                </div>
+            </div>
 
-            <a href="{{ route('perfil.index') }}" data-modulo="Perfil"
-               class="nav-item {{ request()->routeIs('perfil.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
-                <i class="nav-icon fas fa-id-badge w-4 text-center"></i>
-                <span>Perfiles</span>
-            </a>
-            
-            <a href="{{ route('modulo.index') }}" data-modulo="Modulo"
-               class="nav-item {{ request()->routeIs('modulo.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
-                <i class="nav-icon fas fa-cubes w-4 text-center"></i>
-                <span>Módulos</span>
-            </a>
-            
-            <a href="{{ route('permisos.index') }}" data-modulo="Permisos-Perfil"
-               class="nav-item {{ request()->routeIs('permisos.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
-                <i class="nav-icon fas fa-key w-4 text-center"></i>
-                <span>Permisos-Perfil</span>
-            </a>
-            
-            <a href="{{ route('usuarios.index') }}" data-modulo="Usuarios"
-               class="nav-item {{ request()->routeIs('usuarios.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
-                <i class="nav-icon fas fa-users w-4 text-center"></i>
-                <span>Usuarios</span>
-            </a>
+            {{-- GRUPO: SUBMENÚ 1 --}}
+            <div class="menu-group">
+                <button onclick="toggleSubmenu('submenu-1', this)" class="submenu-btn">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-folder-open w-4 text-center text-[var(--text-3)]"></i>
+                        <span class="font-medium">Submenú 1</span>
+                    </div>
+                    <i class="fas fa-chevron-down submenu-icon text-xs"></i>
+                </button>
+                <div id="submenu-1" class="submenu-content pl-9 mt-1 space-y-1">
+                    <a href="{{ route('p1.1.index') }}" data-modulo="Principal1.1" 
+                       class="nav-item {{ request()->routeIs('p1.1.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                        <span>Principal 1.1</span>
+                    </a>
+                    <a href="{{ route('p1.2.index') }}" data-modulo="Principal1.2" 
+                       class="nav-item {{ request()->routeIs('p1.2.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                        <span>Principal 1.2</span>
+                    </a>
+                </div>
+            </div>
 
-            <div class="section-divider my-3"></div>
-            
-            <p class="px-2 mb-2 text-[9px] font-mono tracking-widest text-[var(--text-3)] uppercase">Módulos</p>
-
-            <a href="{{ route('p1.1.index') }}" data-modulo="Principal1.1" 
-               class="nav-item {{ request()->routeIs('p1.1.index') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
-                <i class="nav-icon fas fa-box w-4 text-center"></i>
-                <span>Principal 1.1</span>
-            </a>
-            
-            <a href="{{ route('p1.2.index') }}" data-modulo="Principal1.2" 
-               class="nav-item {{ request()->routeIs('p1.2.index') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
-                <i class="nav-icon fas fa-layer-group w-4 text-center"></i>
-                <span>Principal 1.2</span>
-            </a>
-            
-            <a href="{{ route('p2.1.index') }}" data-modulo="Principal2.1" 
-               class="nav-item {{ request()->routeIs('p2.1.index') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
-                <i class="nav-icon fas fa-box-open w-4 text-center"></i>
-                <span>Principal 2.1</span>
-            </a>
-            
-            <a href="{{ route('p2.2.index') }}" data-modulo="Principal2.2" 
-               class="nav-item {{ request()->routeIs('p2.2.index') ? 'active' : '' }} flex items-center gap-3 px-3 py-2.5 text-sm">
-                <i class="nav-icon fas fa-cubes-stacked w-4 text-center"></i>
-                <span>Principal 2.2</span>
-            </a>
+            {{-- GRUPO: SUBMENÚ 2 --}}
+            <div class="menu-group">
+                <button onclick="toggleSubmenu('submenu-2', this)" class="submenu-btn">
+                    <div class="flex items-center gap-3">
+                        <i class="fas fa-layer-group w-4 text-center text-[var(--text-3)]"></i>
+                        <span class="font-medium">Submenú 2</span>
+                    </div>
+                    <i class="fas fa-chevron-down submenu-icon text-xs"></i>
+                </button>
+                <div id="submenu-2" class="submenu-content pl-9 mt-1 space-y-1">
+                    <a href="{{ route('p2.1.index') }}" data-modulo="Principal2.1" 
+                       class="nav-item {{ request()->routeIs('p2.1.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                        <span>Principal 2.1</span>
+                    </a>
+                    <a href="{{ route('p2.2.index') }}" data-modulo="Principal2.2" 
+                       class="nav-item {{ request()->routeIs('p2.2.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                        <span>Principal 2.2</span>
+                    </a>
+                </div>
+            </div>
 
         </nav>
 
@@ -199,7 +226,6 @@
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-xs font-medium text-[var(--text-1)] truncate group-hover:text-red-400">Cerrar Sesión</p>
-                    <p class="text-[10px] text-[var(--text-3)] truncate">Terminar acceso</p>
                 </div>
             </a>
         </div>
@@ -211,7 +237,6 @@
         {{-- Top bar / breadcrumb --}}
         <header class="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--surface-4)] bg-[var(--surface-1)] flex-shrink-0 z-20 transition-colors duration-300">
             
-            {{-- Breadcrumb + Botón Menú Móvil --}}
             <div class="flex items-center gap-2 sm:gap-3 text-sm min-w-0">
                 <button onclick="toggleSidebar()" class="md:hidden flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md text-[var(--text-2)] bg-[var(--surface-3)] hover:text-[var(--neon)] transition-colors">
                     <i class="fas fa-bars text-sm"></i>
@@ -221,10 +246,7 @@
                 </div>
             </div>
 
-            {{-- Elementos de la Derecha (Avatar & Tema) --}}
             <div class="flex items-center gap-3 flex-shrink-0 pl-2">
-                
-                {{-- 🌗 BOTÓN DE TEMA REUBICADO --}}
                 <button onclick="toggleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--surface-2)] border border-[var(--surface-4)] text-[var(--text-3)] hover:text-[var(--neon)] transition-all hover:scale-110 tooltip" data-tip="Cambiar Tema">
                     <i id="themeIcon" class="fas fa-moon text-sm"></i>
                 </button>
@@ -241,7 +263,6 @@
                         </div>
                     @endif
                 </a>
-                
             </div>
         </header>
 
@@ -270,7 +291,7 @@
 
     {{-- Scripts Globales --}}
     <script>
-        // 0. CONTROL DEL MENÚ MÓVIL
+        // 0. CONTROL DEL MENÚ MÓVIL Y ACORDEÓN
         function toggleSidebar() {
             const sidebar = document.getElementById('mainSidebar');
             const backdrop = document.getElementById('sidebarBackdrop');
@@ -286,40 +307,73 @@
             }
         }
 
+        // Lógica del Acordeón (Sliders)
+        function toggleSubmenu(id, btnElement) {
+            const content = document.getElementById(id);
+            // Cierra los demás submenús si quieres que solo uno esté abierto (Opcional)
+            // document.querySelectorAll('.submenu-content').forEach(el => {
+            //    if(el.id !== id) { el.classList.remove('open'); el.previousElementSibling.classList.remove('open'); }
+            // });
+            content.classList.toggle('open');
+            btnElement.classList.toggle('open');
+        }
+
+        // Abrir automáticamente el submenú que contenga un enlace activo
+        function autoOpenActiveMenu() {
+            const activeLink = document.querySelector('.submenu-content .nav-item.active');
+            if (activeLink) {
+                const parentContent = activeLink.closest('.submenu-content');
+                const parentBtn = parentContent.previousElementSibling;
+                parentContent.classList.add('open');
+                parentBtn.classList.add('open');
+            }
+        }
+
         // 1. CEREBRO DE PERMISOS (RBAC)
         window.tienePermiso = function(nombreModulo, accionCrud) {
             try {
                 const userData = JSON.parse(localStorage.getItem('user_data'));
-                
                 if (!userData) return false; 
-                if (userData.perfil === 1) return true; // Super Admin siempre tiene acceso
+                if (userData.perfil === 1) return true; // Super Admin bypass
 
                 if (userData.permisos && userData.permisos[nombreModulo]) {
                     return userData.permisos[nombreModulo][accionCrud] == 1;
                 }
-                
                 return false;
-            } catch (e) {
-                console.error("Error leyendo permisos", e);
-                return false; 
-            }
+            } catch (e) { return false; }
         };
 
-        // 2. APLICADOR VISUAL DE PERMISOS (Muestra/Oculta menús en el DOM)
+        // 2. APLICADOR VISUAL DE PERMISOS
         window.aplicarPermisosVisuales = function() {
+            // Oculta/Muestra enlaces individuales
             document.querySelectorAll('#sidebarNav [data-modulo]').forEach(enlace => {
                 const modulo = enlace.getAttribute('data-modulo');
-                
                 if (!window.tienePermiso(modulo, 'bitConsulta')) {
                     enlace.style.display = 'none';
                 } else {
                     enlace.style.display = 'flex'; 
                 }
             });
+
+            // NUEVA LÓGICA: Ocultar el grupo entero si no tiene hijos visibles
+            document.querySelectorAll('.menu-group').forEach(group => {
+                const submenuContent = group.querySelector('.submenu-content');
+                if(submenuContent) {
+                    const links = Array.from(submenuContent.querySelectorAll('[data-modulo]'));
+                    const hasVisibleLinks = links.some(link => link.style.display !== 'none');
+                    
+                    if(!hasVisibleLinks) {
+                        group.style.display = 'none'; // Oculta el botón del slider
+                    } else {
+                        group.style.display = 'block';
+                    }
+                }
+            });
         };
 
         document.addEventListener('DOMContentLoaded', () => {
             window.aplicarPermisosVisuales();
+            autoOpenActiveMenu(); // Abre la carpeta si estás en esa vista
         });
 
         // 3. 🚀 MOTOR GLOBAL DE PERMISOS EN TIEMPO REAL 🚀
