@@ -178,7 +178,7 @@
                 <button onclick="toggleSubmenu('submenu-1', this)" class="submenu-btn">
                     <div class="flex items-center gap-3">
                         <i class="fas fa-folder-open w-4 text-center text-[var(--text-3)]"></i>
-                        <span class="font-medium">Submenú 1</span>
+                        <span class="font-medium">Principal 1</span>
                     </div>
                     <i class="fas fa-chevron-down submenu-icon text-xs"></i>
                 </button>
@@ -199,7 +199,7 @@
                 <button onclick="toggleSubmenu('submenu-2', this)" class="submenu-btn">
                     <div class="flex items-center gap-3">
                         <i class="fas fa-layer-group w-4 text-center text-[var(--text-3)]"></i>
-                        <span class="font-medium">Submenú 2</span>
+                        <span class="font-medium">Principal 2</span>
                     </div>
                     <i class="fas fa-chevron-down submenu-icon text-xs"></i>
                 </button>
