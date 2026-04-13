@@ -44,6 +44,27 @@
 .rule-item { font-size: 11px; color: var(--text-3); display: flex; align-items: center; gap: 6px; transition: all 0.2s; }
 .rule-item.valid { color: #22c55e; }
 .rule-item.valid i { transform: scale(1.2); }
+
+/* Switch de Estado Premium */
+.switch-container {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.75rem 1rem; background: var(--surface-1);
+    border-radius: 10px; border: 1px solid var(--surface-4);
+}
+.toggle-switch {
+    position: relative; display: inline-block; width: 42px; height: 22px;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--surface-4); transition: .4s; border-radius: 34px;
+}
+.slider:before {
+    position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+    background-color: white; transition: .4s; border-radius: 50%;
+}
+input:checked + .slider { background-color: #22c55e; }
+input:checked + .slider:before { transform: translateX(20px); }
 </style>
 @endsection
 
@@ -51,14 +72,13 @@
 <div class="h-full w-full overflow-y-auto p-4 sm:p-6 fade-in relative">
     <div class="max-w-4xl mx-auto pb-12">
         
-        {{-- Header Consistente --}}
         <div class="flex items-center gap-4 mb-8">
             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--neon)] to-[var(--neon-dark)] flex items-center justify-center shadow-lg text-white">
                 <i class="fas fa-user-plus text-xl"></i>
             </div>
             <div>
                 <h2 class="text-2xl font-bold text-[var(--text-1)]">Alta de Personal</h2>
-                <p class="text-xs text-[var(--text-3)] mt-1 tracking-wide">Registra una nueva cuenta con enlace de verificación automático.</p>
+                <p class="text-xs text-[var(--text-3)] mt-1 tracking-wide">Registra una nueva cuenta y define su estado de acceso inmediatamente.</p>
             </div>
         </div>
 
@@ -70,7 +90,7 @@
                     <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)]"><i class="fas fa-camera"></i></div>
                     <div>
                         <h3 class="block-title">Imagen de Perfil</h3>
-                        <p class="block-subtitle">Opcional. Se puede actualizar más tarde.</p>
+                        <p class="block-subtitle">Opcional. Identificación visual del usuario.</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-6 pl-11">
@@ -97,27 +117,24 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pl-11">
                     <div>
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Nombre Completo <span class="text-[var(--neon)]">*</span></label>
-                        {{-- 🛡️ Límite HTML de 70 caracteres (según tu DB) --}}
                         <input type="text" id="strNombreUsuario" required maxlength="70" placeholder="Ej. Carlos Valdéz" class="input-premium">
                     </div>
                     <div>
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Número celular <span class="text-[var(--neon)]">*</span></label>
-                        {{-- 🛡️ Límite estricto de 10 dígitos numéricos --}}
                         <input type="text" id="strNumeroCelular" required maxlength="10" placeholder="10 dígitos" class="input-premium" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Correo Electrónico <span class="text-[var(--neon)]">*</span></label>
-                        {{-- 🛡️ Límite HTML de 100 caracteres --}}
                         <input type="email" id="strCorreo" required maxlength="100" placeholder="carlos.v@empresa.com" class="input-premium">
                     </div>
                 </div>
             </div>
 
-            {{-- BLOQUE 3: ACCESOS --}}
+            {{-- BLOQUE 3: ACCESOS Y ESTADO --}}
             <div class="stacked-block">
                 <div class="block-header">
                     <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)]"><i class="fas fa-shield-halved"></i></div>
-                    <h3 class="block-title">Perfil de Acceso</h3>
+                    <h3 class="block-title">Perfil y Estado de Cuenta</h3>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pl-11">
                     <div>
@@ -129,9 +146,15 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="bg-[var(--surface-1)] p-3 rounded-lg border border-blue-500/20 flex items-start gap-3">
-                        <i class="fas fa-info-circle text-blue-400 mt-0.5"></i>
-                        <p class="text-[10px] text-[var(--text-3)] leading-relaxed">El usuario recibirá un correo para activar su cuenta. Por seguridad, la cuenta inicia como <strong>INACTIVA</strong>.</p>
+                    <div>
+                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Estado de Activación</label>
+                        <div class="switch-container">
+                            <span id="statusLabel" class="text-xs font-bold text-red-500">Inactivo (OFF)</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="idEstadoUsuario">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -140,7 +163,7 @@
             <div class="stacked-block">
                 <div class="block-header">
                     <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)]"><i class="fas fa-key"></i></div>
-                    <h3 class="block-title">Contraseña Temporal</h3>
+                    <h3 class="block-title">Contraseña de Acceso</h3>
                 </div>
                 <div class="pl-11">
                     <div class="relative">
@@ -163,7 +186,7 @@
                     <i class="fas fa-arrow-left mr-1"></i> Cancelar
                 </a>
                 <button type="submit" id="btnGuardar" class="btn-primary flex items-center gap-3 py-3 px-10 rounded-xl font-bold shadow-xl shadow-neon-sm opacity-50 cursor-not-allowed transition-all" disabled>
-                    <i class="fas fa-paper-plane"></i> Registrar y Enviar Correo
+                    <i class="fas fa-save"></i> Guardar Usuario
                 </button>
             </div>
 
@@ -194,7 +217,20 @@ document.addEventListener('DOMContentLoaded', () => {
         btnToggle.className = isPwd ? 'fas fa-eye-slash absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-3)] cursor-pointer' : 'fas fa-eye absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-3)] cursor-pointer';
     });
 
-    // 3. Validación de Password
+    // 3. Control del Switch de Estado
+    const stateSwitch = document.getElementById('idEstadoUsuario');
+    const statusLabel = document.getElementById('statusLabel');
+    stateSwitch.addEventListener('change', () => {
+        if(stateSwitch.checked) {
+            statusLabel.textContent = "Activo (ON)";
+            statusLabel.className = "text-xs font-bold text-green-500";
+        } else {
+            statusLabel.textContent = "Inactivo (OFF)";
+            statusLabel.className = "text-xs font-bold text-red-500";
+        }
+    });
+
+    // 4. Validación de Password
     const btnGuardar = document.getElementById('btnGuardar');
     const rules = {
         length: { regex: /.{8,}/, el: document.getElementById('rule-length') },
@@ -226,9 +262,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btnGuardar.style.cursor = allValid ? 'pointer' : 'not-allowed';
     });
 
-    // 4. Envío Fetch con TRADUCCIÓN DE ERRORES
+    // 5. Envío Fetch
     document.getElementById('formNuevoUsuario').addEventListener('submit', async (e) => {
-        btnGuardar.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Registrando...';
+        btnGuardar.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
         btnGuardar.disabled = true;
 
         const payload = {
@@ -237,7 +273,8 @@ document.addEventListener('DOMContentLoaded', () => {
             strNumeroCelular: document.getElementById('strNumeroCelular').value.trim(),
             idPerfil: document.getElementById('idPerfil').value,
             strPwd: pwdInput.value,
-            strImagen: document.getElementById('strImagen').value
+            strImagen: document.getElementById('strImagen').value,
+            idEstadoUsuario: document.getElementById('idEstadoUsuario').checked ? 1 : 0
         };
 
         try {
@@ -256,23 +293,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(window.showToast) window.showToast('¡Éxito!', 'success', data.mensaje);
                 setTimeout(() => window.location.href = "{{ route('usuarios.index') }}", 1500);
             } else {
-                // 🛡️ TRADUCTOR DE ERRORES DE LARAVEL A HUMANO
                 let errorMsg = data.mensaje || 'Ocurrió un error al registrar el usuario.';
                 if (data.errors) {
                     const primerError = Object.values(data.errors)[0][0];
                     if (primerError.includes('already been taken') && primerError.includes('nombre')) {
-                        errorMsg = 'Este nombre de usuario ya está registrado en el sistema.';
+                        errorMsg = 'Este nombre de usuario ya está registrado.';
                     } else if (primerError.includes('already been taken') && primerError.includes('correo')) {
-                        errorMsg = 'Este correo electrónico ya está en uso por otra cuenta.';
+                        errorMsg = 'Este correo electrónico ya está en uso.';
                     } else {
-                        errorMsg = primerError; // Mostrar otro error si no es duplicado
+                        errorMsg = primerError;
                     }
                 }
                 throw new Error(errorMsg);
             }
         } catch (err) {
             if(window.showToast) window.showToast(err.message, 'error');
-            btnGuardar.innerHTML = '<i class="fas fa-paper-plane"></i> Registrar y Enviar Correo';
+            btnGuardar.innerHTML = '<i class="fas fa-save"></i> Guardar Usuario';
             btnGuardar.disabled = false;
         }
     });

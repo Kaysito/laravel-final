@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>@yield('title', 'Admin') — Proyecto</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -59,13 +59,14 @@
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* ── Scrollbar ── */
+        /* ── Scrollbar Mejorado ── */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--surface-2); }
-        ::-webkit-scrollbar-thumb { background: var(--surface-5); border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--surface-4); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--surface-5); }
 
         /* ── Sidebar ── */
-        .sidebar { background: var(--surface-2); border-right: 1px solid var(--surface-4); transition: background-color 0.3s ease, border-color 0.3s ease; }
+        .sidebar { background: var(--surface-2); border-right: 1px solid var(--surface-4); transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .nav-item { color: var(--text-2); transition: all 0.15s ease; border-radius: 8px; }
         .nav-item:hover { background: var(--surface-3); color: var(--text-1); }
         .nav-item.active { background: var(--neon-muted); color: var(--neon); border: 1px solid var(--neon-border); }
@@ -87,8 +88,8 @@
 
         .section-divider { height: 1px; background: linear-gradient(to right, transparent, var(--surface-4), transparent); }
 
-        /* ── Toast ── */
-        .toast { position: fixed; bottom: 24px; right: 24px; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 10px; background: var(--surface-3); border: 1px solid var(--surface-4); box-shadow: 0 8px 32px rgba(0,0,0,0.4); z-index: 1000; transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; }
+        /* ── Toast Responsivo ── */
+        .toast { position: fixed; bottom: 24px; right: 24px; display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 10px; background: var(--surface-3); border: 1px solid var(--surface-4); box-shadow: 0 8px 32px rgba(0,0,0,0.4); z-index: 1000; transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: none; max-width: calc(100vw - 3rem); }
         .toast.show { transform: translateY(0); opacity: 1; pointer-events: auto; }
         .toast.success { border-color: rgba(74,222,128,0.3); }
         .toast.error   { border-color: rgba(230,55,87,0.3);  }
@@ -99,18 +100,26 @@
 </head>
 <body class="flex h-screen overflow-hidden">
 
-    {{-- ─── SIDEBAR ──────────────────────────────────────────────── --}}
-    <aside class="sidebar w-60 flex-shrink-0 flex flex-col h-full z-20">
+    {{-- ─── BACKDROP MÓVIL (Oscurece el fondo al abrir el menú) ─── --}}
+    <div id="sidebarBackdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-20 hidden opacity-0 transition-opacity duration-300 md:hidden"></div>
 
-        {{-- Logo --}}
-        <div class="px-5 py-5 flex items-center gap-3 border-b border-[var(--surface-4)]">
-            <div class="w-8 h-8 rounded-lg bg-[var(--neon-dark)] flex items-center justify-center">
-                <i class="fas fa-bolt text-white text-xs"></i>
+    {{-- ─── SIDEBAR ──────────────────────────────────────────────── --}}
+    <aside id="mainSidebar" class="sidebar fixed md:relative w-64 md:w-60 flex-shrink-0 flex flex-col h-full z-30 transform -translate-x-full md:translate-x-0 shadow-2xl md:shadow-none">
+
+        {{-- Logo & Botón Cerrar (Solo Móvil) --}}
+        <div class="px-5 py-5 flex items-center justify-between border-b border-[var(--surface-4)]">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-[var(--neon-dark)] flex items-center justify-center">
+                    <i class="fas fa-bolt text-white text-xs"></i>
+                </div>
+                <div>
+                    <p class="text-[var(--text-1)] font-semibold text-sm leading-none">Proyecto</p>
+                    <p class="text-[var(--text-3)] text-[10px] font-mono mt-0.5">v2.4.1</p>
+                </div>
             </div>
-            <div>
-                <p class="text-[var(--text-1)] font-semibold text-sm leading-none">Proyecto</p>
-                <p class="text-[var(--text-3)] text-[10px] font-mono mt-0.5">v2.4.1</p>
-            </div>
+            <button onclick="toggleSidebar()" class="md:hidden w-8 h-8 flex items-center justify-center text-[var(--text-3)] hover:text-[var(--neon)] transition-colors rounded-lg bg-[var(--surface-3)]">
+                <i class="fas fa-xmark text-sm"></i>
+            </button>
         </div>
 
         {{-- Nav --}}
@@ -125,7 +134,6 @@
 
             <div class="section-divider my-3"></div>
             
-            {{-- 👇 SECCIÓN DE SEGURIDAD --}}
             <p class="px-2 mb-2 text-[9px] font-mono tracking-widest text-[var(--text-3)] uppercase">Seguridad</p>
 
             <a href="{{ route('perfil.index') }}" data-modulo="Perfil"
@@ -154,7 +162,6 @@
 
             <div class="section-divider my-3"></div>
             
-            {{-- 👇 VISTAS ESTÁTICAS --}}
             <p class="px-2 mb-2 text-[9px] font-mono tracking-widest text-[var(--text-3)] uppercase">Módulos</p>
 
             <a href="{{ route('p1.1.index') }}" data-modulo="Principal1.1" 
@@ -202,12 +209,27 @@
     <main class="flex-1 flex flex-col h-full min-w-0 bg-[var(--surface-1)] relative z-10 transition-colors duration-300">
 
         {{-- Top bar / breadcrumb --}}
-        <header class="flex items-center justify-between px-6 py-4 border-b border-[var(--surface-4)] bg-[var(--surface-1)] flex-shrink-0 z-20 transition-colors duration-300">
-            <div class="flex items-center gap-2 text-sm">
-                @yield('breadcrumb')
+        <header class="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--surface-4)] bg-[var(--surface-1)] flex-shrink-0 z-20 transition-colors duration-300">
+            
+            {{-- Breadcrumb + Botón Menú Móvil --}}
+            <div class="flex items-center gap-2 sm:gap-3 text-sm min-w-0">
+                <button onclick="toggleSidebar()" class="md:hidden flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md text-[var(--text-2)] bg-[var(--surface-3)] hover:text-[var(--neon)] transition-colors">
+                    <i class="fas fa-bars text-sm"></i>
+                </button>
+                <div class="flex items-center gap-2 truncate whitespace-nowrap">
+                    @yield('breadcrumb')
+                </div>
             </div>
-            <div class="flex items-center gap-3">
-                <div class="w-px h-5 bg-[var(--surface-4)] mx-2"></div>
+
+            {{-- Elementos de la Derecha (Avatar & Tema) --}}
+            <div class="flex items-center gap-3 flex-shrink-0 pl-2">
+                
+                {{-- 🌗 BOTÓN DE TEMA REUBICADO --}}
+                <button onclick="toggleTheme()" class="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--surface-2)] border border-[var(--surface-4)] text-[var(--text-3)] hover:text-[var(--neon)] transition-all hover:scale-110 tooltip" data-tip="Cambiar Tema">
+                    <i id="themeIcon" class="fas fa-moon text-sm"></i>
+                </button>
+
+                <div class="w-px h-5 bg-[var(--surface-4)] mx-1 hidden sm:block"></div>
                 
                 <a href="{{ route('miperfil') ?? '#' }}" class="flex items-center gap-2 cursor-pointer tooltip transition-transform hover:scale-105" data-tip="Mi Perfil">
                     @php $currentUser = auth()->user(); @endphp
@@ -232,19 +254,14 @@
 
     </main>
 
-    {{-- 🌗 BOTÓN FLOTANTE --}}
-    <button onclick="toggleTheme()" class="fixed bottom-6 right-6 w-12 h-12 rounded-full bg-[var(--surface-3)] border border-[var(--surface-4)] shadow-lg flex items-center justify-center text-[var(--neon)] hover:scale-110 transition-transform z-50 tooltip" data-tip="Cambiar Tema">
-        <i id="themeIcon" class="fas fa-moon text-lg"></i>
-    </button>
-
     {{-- Toast global --}}
     <div id="toast" class="toast">
         <div id="toastIcon" class="flex-shrink-0"></div>
-        <div>
-            <p id="toastMsg" class="text-sm font-medium text-[var(--text-1)]"></p>
-            <p id="toastSub" class="text-xs text-[var(--text-3)] mt-0.5"></p>
+        <div class="min-w-0 flex-1">
+            <p id="toastMsg" class="text-sm font-medium text-[var(--text-1)] truncate"></p>
+            <p id="toastSub" class="text-xs text-[var(--text-3)] mt-0.5 truncate"></p>
         </div>
-        <button onclick="hideToast()" class="ml-auto text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors flex-shrink-0">
+        <button onclick="hideToast()" class="ml-2 text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors flex-shrink-0">
             <i class="fas fa-xmark text-xs"></i>
         </button>
     </div>
@@ -253,6 +270,22 @@
 
     {{-- Scripts Globales --}}
     <script>
+        // 0. CONTROL DEL MENÚ MÓVIL
+        function toggleSidebar() {
+            const sidebar = document.getElementById('mainSidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            
+            sidebar.classList.toggle('-translate-x-full');
+            
+            if (backdrop.classList.contains('hidden')) {
+                backdrop.classList.remove('hidden');
+                setTimeout(() => backdrop.classList.remove('opacity-0'), 10);
+            } else {
+                backdrop.classList.add('opacity-0');
+                setTimeout(() => backdrop.classList.add('hidden'), 300);
+            }
+        }
+
         // 1. CEREBRO DE PERMISOS (RBAC)
         window.tienePermiso = function(nombreModulo, accionCrud) {
             try {
@@ -277,45 +310,37 @@
             document.querySelectorAll('#sidebarNav [data-modulo]').forEach(enlace => {
                 const modulo = enlace.getAttribute('data-modulo');
                 
-                // Si ya no tiene permiso de Consulta, ocultamos el botón del menú
                 if (!window.tienePermiso(modulo, 'bitConsulta')) {
                     enlace.style.display = 'none';
                 } else {
-                    enlace.style.display = 'flex'; // Lo restaura si le devuelven el permiso
+                    enlace.style.display = 'flex'; 
                 }
             });
         };
 
-        // Ejecutar al cargar la página
         document.addEventListener('DOMContentLoaded', () => {
             window.aplicarPermisosVisuales();
         });
 
         // 3. 🚀 MOTOR GLOBAL DE PERMISOS EN TIEMPO REAL 🚀
-        // Se ejecuta cada 5 segundos para verificar si el superadmin nos cambió los permisos
         setInterval(async () => {
             try {
                 const userDataStr = localStorage.getItem('user_data');
                 if (!userDataStr) return;
                 
                 let userData = JSON.parse(userDataStr);
-                
-                // Si es el Admin Maestro, no necesita estar revisando, él es dios.
                 if (userData.perfil === 1) return;
 
-                // Paso A: Obtener la lista de módulos para cruzar los IDs con los Nombres
                 const resCat = await fetch('/api/permisos/catalogos', { headers: { 'Accept': 'application/json' }});
                 if (!resCat.ok) return;
                 const dataCat = await resCat.json();
                 const modulos = dataCat.modulos || [];
 
-                // Paso B: Obtener los permisos frescos del usuario en la base de datos
                 const resPerm = await fetch(`/api/permisos?perfil=${userData.perfil}`, { headers: { 'Accept': 'application/json' }});
                 if (!resPerm.ok) return;
                 const dataPerm = await resPerm.json();
                 const items = Array.isArray(dataPerm) ? dataPerm : (dataPerm.data ?? []);
 
-                // Paso C: Reconstruir el objeto de permisos en el mismo formato que usa localStorage
                 let nuevosPermisos = {};
                 items.forEach(item => {
                     const mod = modulos.find(m => m.id === item.idModulo);
@@ -330,27 +355,18 @@
                     }
                 });
 
-                // Paso D: Comparar si hubo un cambio en la base de datos
                 if (JSON.stringify(userData.permisos) !== JSON.stringify(nuevosPermisos)) {
-                    
-                    // Si hubo cambio, guardamos los nuevos datos en el navegador
                     userData.permisos = nuevosPermisos;
                     localStorage.setItem('user_data', JSON.stringify(userData));
                     
-                    // Actualizamos el menú lateral de inmediato
                     window.aplicarPermisosVisuales();
                     
-                    // 🛡️ EL EXPULSOR DE EMERGENCIA:
-                    // Verificamos si el usuario está metido en un módulo al que le acaban de quitar acceso
                     const activeMenu = document.querySelector('#sidebarNav .nav-item.active');
                     if (activeMenu) {
                         const currentModulo = activeMenu.getAttribute('data-modulo');
                         if (currentModulo && !window.tienePermiso(currentModulo, 'bitConsulta')) {
-                            // Le mostramos un mensaje sutil y lo pateamos al dashboard
-                            if(window.showToast) window.showToast('Privilegios actualizados por el Administrador. Redirigiendo...', 'info');
-                            setTimeout(() => {
-                                window.location.href = "{{ route('home') }}";
-                            }, 1500);
+                            if(window.showToast) window.showToast('Privilegios actualizados. Redirigiendo...', 'info');
+                            setTimeout(() => window.location.href = "{{ route('home') }}", 1500);
                         }
                     }
                 }
@@ -396,9 +412,9 @@
         function updateIcon(theme) {
             const icon = document.getElementById('themeIcon');
             if (theme === 'dark') {
-                icon.className = 'fas fa-sun text-yellow-400 text-lg';
+                icon.className = 'fas fa-sun text-yellow-400 text-sm';
             } else {
-                icon.className = 'fas fa-moon text-[var(--neon)] text-lg';
+                icon.className = 'fas fa-moon text-[var(--neon)] text-sm';
             }
         }
 

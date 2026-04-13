@@ -3,8 +3,10 @@
 @section('title', 'Mi Perfil')
 
 @section('breadcrumb')
-    <span class="text-[var(--text-3)]">Cuenta</span>
-    <span class="breadcrumb-sep">/</span>
+    <a href="{{ route('home') }}" class="text-[var(--text-3)] hover:text-[var(--neon)] transition-colors tooltip" data-tip="Ir al Dashboard">
+        <i class="fas fa-home text-xs"></i>
+    </a>
+    <i class="fas fa-chevron-right text-[var(--surface-4)] text-[10px] mx-2"></i>
     <span class="text-[var(--text-1)] font-medium">Mi Perfil</span>
 @endsection
 

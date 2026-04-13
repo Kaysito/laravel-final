@@ -11,19 +11,19 @@ class FixAdminPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Intentamos buscar al Super Administrador por nombre o por bit
+        // 1. Buscamos al Super Administrador por nombre o por bit
         $perfilAdmin = Perfil::where('strNombrePerfil', 'like', '%Super%')
                             ->orWhere('bitAdministrador', 1)
                             ->first();
 
-        // 2. Si NO existe, tomamos el ID 1 (o el primero que haya) y lo convertimos
+        // 2. Si NO existe, tomamos el ID 1 y lo convertimos
         if (!$perfilAdmin) {
             $perfilAdmin = Perfil::first();
             
             if (!$perfilAdmin) {
-                // Si la tabla está vacía, creamos el perfil de raíz
+                // Si la tabla está vacía, lo creamos
                 $perfilAdmin = Perfil::create([
-                    'strNombrePerfil' => 'Super Administrador',
+                    'strNombrePerfil' => 'Súper Administrador',
                     'bitAdministrador' => 1
                 ]);
             } else {
@@ -31,7 +31,7 @@ class FixAdminPermissionsSeeder extends Seeder
                 $perfilAdmin->update(['bitAdministrador' => 1]);
             }
         } else {
-            // Si lo encontró por nombre pero el bit estaba en 0, lo activamos
+            // Si lo encontró por nombre pero el bit estaba en 0, lo encendemos
             $perfilAdmin->update(['bitAdministrador' => 1]);
         }
 
@@ -41,11 +41,11 @@ class FixAdminPermissionsSeeder extends Seeder
         $modulos = Modulo::all();
 
         if ($modulos->isEmpty()) {
-            $this->command->error('No hay módulos en la tabla "modulos". Ejecuta primero tus seeders de módulos.');
+            $this->command->error('No hay módulos en la tabla. Ejecuta el ModulosSeeder primero.');
             return;
         }
 
-        // 4. Asignamos permisos totales a ese ID
+        // 4. Asignamos permisos totales a ese ID en la tabla pivote
         foreach ($modulos as $modulo) {
             DB::table('permisos_perfil')->updateOrInsert(
                 ['idPerfil' => $perfilAdmin->id, 'idModulo' => $modulo->id],
@@ -61,6 +61,6 @@ class FixAdminPermissionsSeeder extends Seeder
             );
         }
 
-        $this->command->info('✅ EXITO: El perfil ahora es Administrador y tiene todos los permisos.');
+        $this->command->info('✅ EXITO: El perfil ahora es Administrador y tiene todos los permisos RBAC.');
     }
 }

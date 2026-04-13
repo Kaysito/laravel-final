@@ -2,24 +2,31 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // 1. Crear el Perfil Maestro (Súper Administrador - ID 1)
+        DB::table('perfiles')->insert([
+            'strNombrePerfil' => 'Súper Administrador',
+            // Eliminamos la descripción para que coincida con tu migración real
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // 2. Crear el Usuario Root (ID 1) vinculado al Perfil 1
+        DB::table('usuarios')->insert([
+            'strNombreUsuario' => 'admin',
+            'strCorreo' => 'admin@empresa.com',
+            'strPwd' => Hash::make('Admin123!'), // Contraseña encriptada
+            'idEstadoUsuario' => 1, // Activo
+            'idPerfil' => 1, // Súper Administrador
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 }
