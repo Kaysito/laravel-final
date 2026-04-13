@@ -36,10 +36,10 @@
 
         <div class="detail-container">
             {{-- Header --}}
-            <div class="flex items-center justify-between mb-12 pb-6 border-b border-[var(--surface-4)]">
+            <div class="flex items-center justify-between mb-10 pb-6 border-b border-[var(--surface-4)]">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 rounded-2xl bg-[var(--surface-3)] flex items-center justify-center text-[var(--neon)] text-xl border border-[var(--surface-4)] shadow-inner">
-                        <i class="fas fa-cube"></i>
+                        <i class="{{ $modulo->strIcono ?? 'fas fa-cube' }}"></i>
                     </div>
                     <div>
                         <h2 class="text-2xl font-black text-[var(--text-1)] tracking-tight">Ficha del Módulo</h2>
@@ -49,18 +49,54 @@
                 <span class="id-badge">ID #{{ str_pad($modulo->id, 2, '0', STR_PAD_LEFT) }}</span>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                 
                 {{-- Nombre del Módulo --}}
-                <div class="info-group md:col-span-2">
+                <div class="info-group md:col-span-2 mb-0">
                     <label class="info-label">Nombre del Componente</label>
                     <div class="info-display">
                         {{ $modulo->strNombreModulo }}
                     </div>
                 </div>
 
+                {{-- Carpeta / Grupo --}}
+                <div class="info-group mb-0">
+                    <label class="info-label">Carpeta / Grupo en Menú</label>
+                    <div class="info-display text-sm">
+                        @if($modulo->strGrupo)
+                            <i class="fas fa-folder text-[var(--text-3)] mr-3"></i> {{ $modulo->strGrupo }}
+                        @else
+                            <i class="fas fa-folder-minus text-[var(--text-3)] mr-3 opacity-50"></i> <span class="opacity-50 italic">Suelto (Sin Carpeta)</span>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Icono --}}
+                <div class="info-group mb-0">
+                    <label class="info-label">Icono Asignado</label>
+                    <div class="info-display font-mono text-sm">
+                        @if($modulo->strIcono)
+                            <i class="{{ $modulo->strIcono }} text-[var(--neon)] w-6 text-center mr-2"></i> {{ $modulo->strIcono }}
+                        @else
+                            <i class="fas fa-cube text-[var(--text-3)] w-6 text-center mr-2 opacity-50"></i> <span class="opacity-50 italic">Predeterminado</span>
+                        @endif
+                    </div>
+                </div>
+
+                {{-- Ruta del Sistema --}}
+                <div class="info-group md:col-span-2 mb-0">
+                    <label class="info-label">Ruta de Laravel (URL Base)</label>
+                    <div class="info-display font-mono text-sm text-blue-400">
+                        @if($modulo->strRuta)
+                            <i class="fas fa-link text-[var(--text-3)] mr-3"></i> {{ $modulo->strRuta }}
+                        @else
+                            <i class="fas fa-link-slash text-[var(--text-3)] mr-3 opacity-50"></i> <span class="opacity-50 italic text-[var(--text-3)]">No asignada</span>
+                        @endif
+                    </div>
+                </div>
+
                 {{-- Fechas --}}
-                <div class="info-group">
+                <div class="info-group mt-6 mb-0">
                     <label class="info-label">Registrado el</label>
                     <div class="date-box">
                         <i class="far fa-calendar-check text-[var(--neon)] opacity-70"></i>
@@ -68,7 +104,7 @@
                     </div>
                 </div>
 
-                <div class="info-group">
+                <div class="info-group mt-6 mb-0">
                     <label class="info-label">Última modificación</label>
                     <div class="date-box">
                         <i class="far fa-clock text-blue-400 opacity-70"></i>
@@ -79,12 +115,12 @@
             </div>
 
             {{-- Footer de Acciones --}}
-            <div class="mt-16 pt-8 border-t border-[var(--surface-4)] flex items-center justify-between">
-                <a href="{{ route('modulo.index') }}" class="btn-ghost flex items-center gap-2 px-6 py-3 text-sm font-bold border border-[var(--surface-4)] rounded-xl bg-[var(--surface-2)] transition-all hover:bg-[var(--surface-3)]">
+            <div class="mt-12 pt-8 border-t border-[var(--surface-4)] flex flex-col sm:flex-row items-center justify-between gap-4">
+                <a href="{{ route('modulo.index') }}" class="btn-ghost w-full sm:w-auto justify-center flex items-center gap-2 px-6 py-3 text-sm font-bold border border-[var(--surface-4)] rounded-xl bg-[var(--surface-2)] transition-all hover:bg-[var(--surface-3)]">
                     <i class="fas fa-chevron-left text-[10px]"></i> Regresar al listado
                 </a>
                 
-                <button id="btnEditarModulo" class="btn-primary px-10 py-3 rounded-xl font-bold flex items-center gap-3 shadow-xl shadow-neon-sm transition-all hover:scale-[1.02]">
+                <button id="btnEditarModulo" class="btn-primary w-full sm:w-auto justify-center px-10 py-3 rounded-xl font-bold flex items-center gap-3 shadow-xl shadow-neon-sm transition-all hover:scale-[1.02]">
                     <i class="fas fa-pen-to-square"></i> Editar Módulo
                 </button>
             </div>
@@ -106,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnEditar) {
         btnEditar.addEventListener('click', () => {
-            // ✅ Redirección directa a la nueva vista de edición
+            // ✅ Redirección directa a la vista de edición
             window.location.href = `/modulos/{{ $modulo->id }}/editar`;
         });
     }

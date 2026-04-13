@@ -73,13 +73,13 @@
         .nav-item.active .nav-icon { color: var(--neon); }
 
         /* Botón del Submenú */
-        .submenu-btn { width: 100%; display: flex; items-center; justify-content: space-between; padding: 0.625rem 0.75rem; color: var(--text-2); font-size: 0.875rem; border-radius: 8px; transition: all 0.15s; cursor: pointer; }
+        .submenu-btn { width: 100%; display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 0.75rem; color: var(--text-2); font-size: 0.875rem; border-radius: 8px; transition: all 0.15s; cursor: pointer; }
         .submenu-btn:hover { background: var(--surface-3); color: var(--text-1); }
         .submenu-icon { transition: transform 0.3s ease; }
         
         /* Contenedor del Submenú (Efecto Slider) */
         .submenu-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-in-out; }
-        .submenu-content.open { max-height: 500px; /* Suficiente para que abra suavemente */ }
+        .submenu-content.open { max-height: 500px; }
         .submenu-btn.open .submenu-icon { transform: rotate(180deg); }
 
         /* ── Card & Inputs ── */
@@ -144,76 +144,44 @@
 
             <div class="section-divider my-2"></div>
             
-            {{-- GRUPO: SEGURIDAD --}}
-            <div class="menu-group">
-                <button onclick="toggleSubmenu('submenu-seguridad', this)" class="submenu-btn">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-shield-halved w-4 text-center text-[var(--text-3)]"></i>
-                        <span class="font-medium">Seguridad</span>
-                    </div>
-                    <i class="fas fa-chevron-down submenu-icon text-xs"></i>
-                </button>
-                <div id="submenu-seguridad" class="submenu-content pl-9 mt-1 space-y-1">
-                    <a href="{{ route('perfil.index') }}" data-modulo="Perfil"
-                       class="nav-item {{ request()->routeIs('perfil.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                        <span>Perfiles</span>
-                    </a>
-                    <a href="{{ route('modulo.index') }}" data-modulo="Modulo"
-                       class="nav-item {{ request()->routeIs('modulo.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                        <span>Módulos</span>
-                    </a>
-                    <a href="{{ route('permisos.index') }}" data-modulo="Permisos-Perfil"
-                       class="nav-item {{ request()->routeIs('permisos.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                        <span>Permisos</span>
-                    </a>
-                    <a href="{{ route('usuarios.index') }}" data-modulo="Usuarios"
-                       class="nav-item {{ request()->routeIs('usuarios.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                        <span>Usuarios</span>
-                    </a>
-                </div>
-            </div>
+            {{-- MAGIA DINÁMICA: Dibujamos los módulos desde la Base de Datos --}}
+            @if(isset($modulosMenu))
+                @foreach($modulosMenu as $grupo => $modulos)
+                    
+                    @if(empty($grupo))
+                        {{-- Módulos Sueltos (Sin Carpeta) --}}
+                        @foreach($modulos as $mod)
+                            <a href="{{ $mod->strRuta && Route::has($mod->strRuta) ? route($mod->strRuta) : '#' }}" data-modulo="{{ $mod->strNombreModulo }}"
+                               class="nav-item {{ $mod->strRuta && request()->routeIs($mod->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                                <i class="nav-icon {{ $mod->strIcono ?? 'fas fa-cube' }} w-4 text-center"></i>
+                                <span>{{ $mod->strNombreModulo }}</span>
+                            </a>
+                        @endforeach
+                    @else
+                        {{-- Módulos Agrupados (Carpeta / Slider) --}}
+                        @php $folderId = 'submenu-' . Str::slug($grupo); @endphp
+                        <div class="menu-group">
+                            <button onclick="toggleSubmenu('{{ $folderId }}', this)" class="submenu-btn">
+                                <div class="flex items-center gap-3">
+                                    <i class="fas fa-folder w-4 text-center text-[var(--text-3)]"></i>
+                                    <span class="font-medium">{{ $grupo }}</span>
+                                </div>
+                                <i class="fas fa-chevron-down submenu-icon text-xs"></i>
+                            </button>
+                            <div id="{{ $folderId }}" class="submenu-content pl-9 mt-1 space-y-1">
+                                @foreach($modulos as $mod)
+                                    <a href="{{ $mod->strRuta && Route::has($mod->strRuta) ? route($mod->strRuta) : '#' }}" data-modulo="{{ $mod->strNombreModulo }}"
+                                       class="nav-item {{ $mod->strRuta && request()->routeIs($mod->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                                        <i class="nav-icon {{ $mod->strIcono ?? 'fas fa-cube' }} w-4 text-center text-[10px]"></i>
+                                        <span>{{ $mod->strNombreModulo }}</span>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
-            {{-- GRUPO: SUBMENÚ 1 --}}
-            <div class="menu-group">
-                <button onclick="toggleSubmenu('submenu-1', this)" class="submenu-btn">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-folder-open w-4 text-center text-[var(--text-3)]"></i>
-                        <span class="font-medium">Principal 1</span>
-                    </div>
-                    <i class="fas fa-chevron-down submenu-icon text-xs"></i>
-                </button>
-                <div id="submenu-1" class="submenu-content pl-9 mt-1 space-y-1">
-                    <a href="{{ route('p1.1.index') }}" data-modulo="Principal1.1" 
-                       class="nav-item {{ request()->routeIs('p1.1.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                        <span>Principal 1.1</span>
-                    </a>
-                    <a href="{{ route('p1.2.index') }}" data-modulo="Principal1.2" 
-                       class="nav-item {{ request()->routeIs('p1.2.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                        <span>Principal 1.2</span>
-                    </a>
-                </div>
-            </div>
-
-            {{-- GRUPO: SUBMENÚ 2 --}}
-            <div class="menu-group">
-                <button onclick="toggleSubmenu('submenu-2', this)" class="submenu-btn">
-                    <div class="flex items-center gap-3">
-                        <i class="fas fa-layer-group w-4 text-center text-[var(--text-3)]"></i>
-                        <span class="font-medium">Principal 2</span>
-                    </div>
-                    <i class="fas fa-chevron-down submenu-icon text-xs"></i>
-                </button>
-                <div id="submenu-2" class="submenu-content pl-9 mt-1 space-y-1">
-                    <a href="{{ route('p2.1.index') }}" data-modulo="Principal2.1" 
-                       class="nav-item {{ request()->routeIs('p2.1.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                        <span>Principal 2.1</span>
-                    </a>
-                    <a href="{{ route('p2.2.index') }}" data-modulo="Principal2.2" 
-                       class="nav-item {{ request()->routeIs('p2.2.*') ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                        <span>Principal 2.2</span>
-                    </a>
-                </div>
-            </div>
+                @endforeach
+            @endif
 
         </nav>
 
@@ -310,10 +278,6 @@
         // Lógica del Acordeón (Sliders)
         function toggleSubmenu(id, btnElement) {
             const content = document.getElementById(id);
-            // Cierra los demás submenús si quieres que solo uno esté abierto (Opcional)
-            // document.querySelectorAll('.submenu-content').forEach(el => {
-            //    if(el.id !== id) { el.classList.remove('open'); el.previousElementSibling.classList.remove('open'); }
-            // });
             content.classList.toggle('open');
             btnElement.classList.toggle('open');
         }
@@ -355,7 +319,7 @@
                 }
             });
 
-            // NUEVA LÓGICA: Ocultar el grupo entero si no tiene hijos visibles
+            // Ocultar el grupo entero si no tiene hijos visibles
             document.querySelectorAll('.menu-group').forEach(group => {
                 const submenuContent = group.querySelector('.submenu-content');
                 if(submenuContent) {
@@ -363,7 +327,7 @@
                     const hasVisibleLinks = links.some(link => link.style.display !== 'none');
                     
                     if(!hasVisibleLinks) {
-                        group.style.display = 'none'; // Oculta el botón del slider
+                        group.style.display = 'none';
                     } else {
                         group.style.display = 'block';
                     }
@@ -373,7 +337,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             window.aplicarPermisosVisuales();
-            autoOpenActiveMenu(); // Abre la carpeta si estás en esa vista
+            autoOpenActiveMenu(); 
         });
 
         // 3. 🚀 MOTOR GLOBAL DE PERMISOS EN TIEMPO REAL 🚀

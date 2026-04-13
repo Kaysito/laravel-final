@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Modulo;
+use App\Models\Perfil; // IMPORTANTE: Agregado para leer los perfiles
 use Illuminate\Support\Facades\DB;
 
 class ModuloController extends Controller
@@ -32,20 +33,58 @@ class ModuloController extends Controller
     }
 
     // =========================================================
-    // 💾 PROCESO: GUARDAR
+    // 💾 PROCESO: GUARDAR E INYECTAR EN LA MATRIZ
     // =========================================================
     public function guardar(Request $request)
     {
+        // 1. Validamos incluyendo los nuevos campos del menú dinámico
         $request->validate([
             'strNombreModulo' => 'required|string|max:100|unique:modulos,strNombreModulo',
+            'strGrupo'        => 'nullable|string|max:100',
+            'strRuta'         => 'nullable|string|max:100',
+            'strIcono'        => 'nullable|string|max:100'
         ]);
 
-        $modulo = Modulo::create($request->all());
+        // 2. Creamos el Módulo con su icono por defecto si no enviaron uno
+        $modulo = Modulo::create([
+            'strNombreModulo' => $request->strNombreModulo,
+            'strGrupo'        => $request->strGrupo,
+            'strRuta'         => $request->strRuta,
+            'strIcono'        => $request->strIcono ?? 'fas fa-cube',
+        ]);
 
+        // 3. MAGIA: Auto-siembra en la tabla permisos_perfil
+        $perfiles = Perfil::all();
+        $permisosInyectar = [];
+        $ahora = now();
+
+        foreach ($perfiles as $perfil) {
+            // El Perfil ID 1 (Súper Administrador) obtiene acceso total (1). El resto queda bloqueado (0).
+            $esAdmin = ($perfil->id == 1) ? 1 : 0; 
+
+            $permisosInyectar[] = [
+                'idPerfil'    => $perfil->id,
+                'idModulo'    => $modulo->id,
+                'bitConsulta' => $esAdmin,
+                'bitAgregar'  => $esAdmin,
+                'bitEditar'   => $esAdmin,
+                'bitEliminar' => $esAdmin,
+                'bitDetalle'  => $esAdmin,
+                'created_at'  => $ahora,
+                'updated_at'  => $ahora,
+            ];
+        }
+
+        // Insertamos todos los registros de golpe (Optimización de base de datos)
+        if (!empty($permisosInyectar)) {
+            DB::table('permisos_perfil')->insert($permisosInyectar);
+        }
+
+        // 4. Retornamos respuesta
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true, 
-                'mensaje' => '✅ Módulo registrado exitosamente',
+                'mensaje' => '✅ Módulo registrado e integrado a la Matriz de Seguridad.',
                 'id' => $modulo->id
             ]);
         }
@@ -70,12 +109,23 @@ class ModuloController extends Controller
     // =========================================================
     public function actualizar(Request $request, $id)
     {
+        // Actualizamos las reglas para permitir la edición de los nuevos campos
         $request->validate([
             'strNombreModulo' => 'required|string|max:100|unique:modulos,strNombreModulo,' . $id,
+            'strGrupo'        => 'nullable|string|max:100',
+            'strRuta'         => 'nullable|string|max:100',
+            'strIcono'        => 'nullable|string|max:100'
         ]);
 
         $modulo = Modulo::findOrFail($id);
-        $modulo->update($request->all());
+        
+        // Si mandaron el icono vacío en la edición, le devolvemos un valor por defecto
+        $datosActualizar = $request->all();
+        if (empty($datosActualizar['strIcono'])) {
+            $datosActualizar['strIcono'] = 'fas fa-cube';
+        }
+
+        $modulo->update($datosActualizar);
 
         return response()->json([
             'success' => true,
@@ -121,6 +171,8 @@ class ModuloController extends Controller
     {
         $modulo = Modulo::find($id);
         if ($modulo) {
+            // Nota: Debido a las llaves foráneas y el "onDelete('cascade')" en tus migraciones,
+            // al eliminar el módulo se borrarán automáticamente sus registros en 'permisos_perfil'
             $modulo->delete();
             return response()->json(['success' => true, 'mensaje' => 'Módulo eliminado']);
         }

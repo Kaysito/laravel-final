@@ -70,7 +70,6 @@
                 
                 <div class="pl-11">
                     <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Nombre del Módulo <span class="text-[var(--neon)]">*</span></label>
-                    {{-- 🛡️ Límite HTML de 70 caracteres --}}
                     <input type="text" id="strNombreModulo" class="input-premium" value="{{ $modulo->strNombreModulo }}" required maxlength="70" autofocus autocomplete="off">
                     
                     <div class="mt-4 bg-[var(--surface-1)] p-3 rounded-lg border border-blue-500/20 flex items-start gap-3">
@@ -82,10 +81,49 @@
                 </div>
             </div>
 
-            {{-- BLOQUE 2: AUDITORÍA --}}
+            {{-- BLOQUE 2: CONFIGURACIÓN VISUAL (MENÚ DINÁMICO) --}}
             <div class="stacked-block">
                 <div class="block-header">
                     <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)]">
+                        <i class="fas fa-bars-staggered"></i>
+                    </div>
+                    <div>
+                        <h3 class="block-title">Ubicación en el Menú (Slider)</h3>
+                        <p class="block-subtitle">Modifica la carpeta, el icono o la ruta donde vive este módulo.</p>
+                    </div>
+                </div>
+                
+                <div class="pl-11 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Carpeta / Grupo</label>
+                        <input type="text" id="strGrupo" value="{{ $modulo->strGrupo }}" maxlength="100" placeholder="Ej. Finanzas, Seguridad..." class="input-premium" autocomplete="off">
+                        <p class="text-[10px] text-[var(--text-3)] mt-1">Déjalo en blanco para dejar el módulo suelto en el menú.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Icono (FontAwesome)</label>
+                        <div class="relative">
+                            <i class="fas fa-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs"></i>
+                            <input type="text" id="strIcono" value="{{ $modulo->strIcono }}" maxlength="100" placeholder="fas fa-chart-pie" class="input-premium pl-8" autocomplete="off">
+                        </div>
+                        <p class="text-[10px] text-[var(--text-3)] mt-1">Si lo dejas vacío, usará el cubo por defecto.</p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Ruta del Sistema (Laravel Route)</label>
+                        <div class="relative">
+                            <i class="fas fa-link absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs"></i>
+                            <input type="text" id="strRuta" value="{{ $modulo->strRuta }}" maxlength="100" placeholder="Ej. inventarios.index" class="input-premium pl-8 font-mono text-xs" autocomplete="off">
+                        </div>
+                        <p class="text-[10px] text-[var(--text-3)] mt-1">Nombre exacto de la ruta registrada en web.php</p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- BLOQUE 3: AUDITORÍA --}}
+            <div class="stacked-block bg-[var(--surface-1)] border-dashed">
+                <div class="block-header">
+                    <div class="w-8 h-8 rounded bg-[var(--surface-2)] flex items-center justify-center text-[var(--text-3)] border border-[var(--surface-4)]">
                         <i class="fas fa-clock-rotate-left"></i>
                     </div>
                     <h3 class="block-title">Historial del Registro</h3>
@@ -128,6 +166,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('formEditarModulo');
     const inputNombre = document.getElementById('strNombreModulo');
+    const inputGrupo  = document.getElementById('strGrupo');
+    const inputIcono  = document.getElementById('strIcono');
+    const inputRuta   = document.getElementById('strRuta');
     const btnActualizar = document.getElementById('btnActualizar');
 
     form.addEventListener('submit', async (e) => {
@@ -149,7 +190,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ strNombreModulo: nombre })
+                body: JSON.stringify({ 
+                    strNombreModulo: nombre,
+                    strGrupo: inputGrupo.value.trim() || null,
+                    strIcono: inputIcono.value.trim() || null,
+                    strRuta: inputRuta.value.trim() || null
+                })
             });
             
             const data = await res.json();

@@ -49,7 +49,7 @@
             </div>
             <div>
                 <h2 class="text-2xl font-bold text-[var(--text-1)]">Nuevo Módulo</h2>
-                <p class="text-xs text-[var(--text-3)] mt-1 tracking-wide">Registro de nueva funcionalidad para la matriz de accesos.</p>
+                <p class="text-xs text-[var(--text-3)] mt-1 tracking-wide">Registro de nueva funcionalidad para la matriz y el menú.</p>
             </div>
         </div>
 
@@ -63,20 +63,58 @@
                     </div>
                     <div>
                         <h3 class="block-title">Identificador del Módulo</h3>
-                        <p class="block-subtitle">Define el nombre visible en el menú y los permisos.</p>
+                        <p class="block-subtitle">Define el nombre visible en la matriz de permisos.</p>
                     </div>
                 </div>
                 
                 <div class="pl-11">
                     <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Nombre del Módulo <span class="text-[var(--neon)]">*</span></label>
-                    {{-- 🛡️ Límite HTML de 70 caracteres para proteger la DB --}}
                     <input type="text" id="strNombreModulo" required maxlength="70" placeholder="Ej. Gestión de Inventarios" class="input-premium" autocomplete="off" autofocus>
                     
                     <div class="mt-4 bg-[var(--surface-1)] p-3 rounded-lg border border-blue-500/20 flex items-start gap-3">
                         <i class="fas fa-info-circle text-blue-400 mt-0.5"></i>
                         <p class="text-[10px] text-[var(--text-3)] leading-relaxed">
-                            Asegúrate de que el nombre sea único, descriptivo y no contenga caracteres extraños. Este nombre se utilizará automáticamente en la <strong>Matriz de Permisos (RBAC)</strong>.
+                            Asegúrate de que el nombre sea único. Este nombre se utilizará automáticamente en la <strong>Matriz de Permisos (RBAC)</strong>.
                         </p>
+                    </div>
+                </div>
+            </div>
+
+            {{-- BLOQUE 2: CONFIGURACIÓN VISUAL (MENÚ DINÁMICO) --}}
+            <div class="stacked-block">
+                <div class="block-header">
+                    <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)]">
+                        <i class="fas fa-bars-staggered"></i>
+                    </div>
+                    <div>
+                        <h3 class="block-title">Ubicación en el Menú (Slider)</h3>
+                        <p class="block-subtitle">Configura cómo se verá este módulo en el panel izquierdo.</p>
+                    </div>
+                </div>
+                
+                <div class="pl-11 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Carpeta / Grupo</label>
+                        <input type="text" id="strGrupo" maxlength="100" placeholder="Ej. Finanzas, Seguridad..." class="input-premium" autocomplete="off">
+                        <p class="text-[10px] text-[var(--text-3)] mt-1">Déjalo en blanco para dejar el módulo suelto en el menú.</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Icono (FontAwesome)</label>
+                        <div class="relative">
+                            <i class="fas fa-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs"></i>
+                            <input type="text" id="strIcono" maxlength="100" placeholder="fas fa-chart-pie" class="input-premium pl-8" autocomplete="off">
+                        </div>
+                        <p class="text-[10px] text-[var(--text-3)] mt-1">Por defecto: <i class="fas fa-cube mx-1"></i> fas fa-cube</p>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Ruta del Sistema (Laravel Route)</label>
+                        <div class="relative">
+                            <i class="fas fa-link absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs"></i>
+                            <input type="text" id="strRuta" maxlength="100" placeholder="Ej. inventarios.index" class="input-premium pl-8 font-mono text-xs" autocomplete="off">
+                        </div>
+                        <p class="text-[10px] text-[var(--text-3)] mt-1">Nombre de la ruta configurada en web.php</p>
                     </div>
                 </div>
             </div>
@@ -101,7 +139,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('formNuevoModulo');
     const inputNombre = document.getElementById('strNombreModulo');
-    const btnGuardar = document.getElementById('btnGuardar');
+    const inputGrupo  = document.getElementById('strGrupo');
+    const inputIcono  = document.getElementById('strIcono');
+    const inputRuta   = document.getElementById('strRuta');
+    const btnGuardar  = document.getElementById('btnGuardar');
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -120,13 +161,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ strNombreModulo: nombre })
+                body: JSON.stringify({ 
+                    strNombreModulo: nombre,
+                    strGrupo: inputGrupo.value.trim() || null,
+                    strIcono: inputIcono.value.trim() || null,
+                    strRuta: inputRuta.value.trim() || null
+                })
             });
             
             const data = await res.json();
             
             if (res.ok && data.success) {
-                if(window.showToast) window.showToast('Módulo registrado correctamente', 'success');
+                if(window.showToast) window.showToast('Módulo registrado y añadido al menú', 'success');
                 setTimeout(() => window.location.href = "{{ route('modulo.index') }}", 1000);
             } else {
                 // 🛡️ TRADUCTOR DE ERRORES DE LARAVEL A HUMANO
