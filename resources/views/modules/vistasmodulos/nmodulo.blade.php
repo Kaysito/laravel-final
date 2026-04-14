@@ -45,7 +45,7 @@ input::-webkit-calendar-picker-indicator { display: none !important; }
 <div class="h-full w-full overflow-y-auto p-4 sm:p-6 fade-in relative">
     <div class="max-w-4xl mx-auto pb-12">
 
-        {{-- Header Consistente --}}
+        {{-- Header Consistente --}} 
         <div class="flex items-center gap-4 mb-8">
             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--neon)] to-[var(--neon-dark)] flex items-center justify-center shadow-lg text-white">
                 <i class="fas fa-layer-group text-xl"></i>
@@ -58,7 +58,7 @@ input::-webkit-calendar-picker-indicator { display: none !important; }
 
         <form id="formNuevoModulo" action="javascript:void(0);">
             
-            {{-- BLOQUE 1: INFORMACIÓN DEL MÓDULO --}}
+            {{-- BLOQUE 1: INFORMACIÓN DEL MÓDULO --}} 
             <div class="stacked-block">
                 <div class="block-header">
                     <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)] border border-[var(--surface-4)]">
@@ -77,13 +77,13 @@ input::-webkit-calendar-picker-indicator { display: none !important; }
                     <div class="mt-4 bg-[var(--surface-1)] p-3 rounded-lg border border-blue-500/20 flex items-start gap-3 shadow-inner">
                         <i class="fas fa-shield-halved text-blue-400 mt-0.5"></i>
                         <p class="text-[10px] text-[var(--text-3)] leading-relaxed">
-                            Al guardar, el sistema inyectará este módulo automáticamente en la <strong>Matriz de Permisos</strong>. Por seguridad, todos los perfiles iniciarán con acceso denegado (0), excepto el Súper Administrador.
+                            Al guardar, el sistema inyectará este módulo automáticamente en la <strong>Matriz de Permisos</strong>. Por seguridad, todos los perfiles iniciarán con acceso denegado (excepto Admin).
                         </p>
                     </div>
                 </div>
             </div>
 
-            {{-- BLOQUE 2: CONFIGURACIÓN VISUAL (MENÚ DINÁMICO) --}}
+            {{-- BLOQUE 2: CONFIGURACIÓN VISUAL (MENÚ DINÁMICO) --}} 
             <div class="stacked-block">
                 <div class="block-header">
                     <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)] border border-[var(--surface-4)]">
@@ -97,7 +97,7 @@ input::-webkit-calendar-picker-indicator { display: none !important; }
                 
                 <div class="pl-11 grid grid-cols-1 md:grid-cols-2 gap-6">
                     
-                    {{-- Datalist de Grupos --}}
+                    {{-- Datalist de Grupos --}} 
                     <div>
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Carpeta Organizadora</label>
                         <input list="listaGrupos" type="text" id="strGrupo" maxlength="100" placeholder="Escribe o selecciona..." class="input-premium" autocomplete="off">
@@ -113,7 +113,7 @@ input::-webkit-calendar-picker-indicator { display: none !important; }
                         <p class="text-[10px] text-[var(--text-3)] mt-1.5"><i class="fas fa-circle-info mr-1 opacity-70"></i> Si lo dejas vacío, el módulo aparecerá suelto en la raíz del menú.</p>
                     </div>
 
-                    {{-- Icono con Preview Live --}}
+                    {{-- Icono con Preview Live --}} 
                     <div>
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Icono (FontAwesome)</label>
                         <div class="relative">
@@ -123,7 +123,7 @@ input::-webkit-calendar-picker-indicator { display: none !important; }
                         <p class="text-[10px] text-[var(--text-3)] mt-1.5"><i class="fas fa-magnifying-glass mr-1 opacity-70"></i> Escribe la clase para ver la vista previa.</p>
                     </div>
 
-                    {{-- Ruta --}}
+                    {{-- Ruta --}} 
                     <div class="md:col-span-2">
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Enrutamiento (Laravel Route Name)</label>
                         <div class="relative">
@@ -132,13 +132,13 @@ input::-webkit-calendar-picker-indicator { display: none !important; }
                         </div>
                         <p class="text-[10px] text-[var(--text-3)] mt-1.5 leading-relaxed">
                             <i class="fas fa-wand-magic-sparkles mr-1 text-[var(--neon)] opacity-70"></i> 
-                            Si lo dejas en blanco, el sistema le asignará la <strong>Vista Genérica de Construcción</strong> automáticamente para que puedas diseñarlo más adelante sin que el sistema falle.
+                            Si lo dejas en blanco, el sistema le asignará la <strong>Vista Genérica de Construcción</strong> automáticamente.
                         </p>
                     </div>
                 </div>
             </div>
 
-            {{-- Footer de Acciones --}}
+            {{-- Footer de Acciones --}} 
             <div class="flex items-center justify-between border-t border-[var(--surface-4)] pt-6 mt-4">
                 <a href="{{ route('modulo.index') }}" class="text-xs font-bold text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors">
                     <i class="fas fa-arrow-left mr-1"></i> Cancelar y volver
@@ -167,7 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🎨 Live Preview del Icono
     inputIcono.addEventListener('input', (e) => {
         const val = e.target.value.trim();
-        iconPreview.className = val ? `${val} absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neon)] text-sm transition-all duration-300` : 'fas fa-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs transition-all duration-300';
+        iconPreview.className = val
+            ? `${val} absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neon)] text-sm transition-all duration-300`
+            : 'fas fa-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs transition-all duration-300';
     });
 
     form.addEventListener('submit', async (e) => {
@@ -183,9 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/modulos', {
                 method: 'POST',
                 headers: { 
-                    'Content-Type': 'application/json', 
+                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify({ 
                     strNombreModulo: nombre,
@@ -194,22 +197,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     strRuta: inputRuta.value.trim() || null
                 })
             });
-            
-            const data = await res.json();
+
+            // Si el backend devuelve HTML (por ejemplo 419/500), evitamos que explote el .json()
+            const contentType = res.headers.get('content-type') || '';
+            const data = contentType.includes('application/json')
+                ? await res.json()
+                : { success: false, message: await res.text() };
             
             if (res.ok && data.success) {
                 if(window.showToast) window.showToast('Módulo construido y protegido exitosamente', 'success');
                 setTimeout(() => window.location.href = "{{ route('modulo.index') }}", 1200);
             } else {
-                let errorMsg = data.message || 'Ocurrió un error al registrar el módulo.';
+                let errorMsg = data.message || data.mensaje || 'Ocurrió un error al registrar el módulo.';
                 if (data.errors) {
                     const primerError = Object.values(data.errors)[0][0];
-                    if (primerError.includes('already been taken')) {
+                    if ((primerError || '').includes('already been taken')) {
                         errorMsg = 'Atención: Este nombre de módulo ya existe en la base de datos.';
                     } else {
-                        errorMsg = primerError; 
+                        errorMsg = primerError;
                     }
-                } else if (data.message && data.message.includes('already been taken')) {
+                } else if ((data.message || data.mensaje || '').includes('already been taken')) {
                     errorMsg = 'Atención: Este nombre de módulo ya existe en la base de datos.';
                 }
                 throw new Error(errorMsg);
