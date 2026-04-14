@@ -35,6 +35,9 @@
 .block-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
 .block-title { font-size: 0.9rem; font-weight: 700; color: var(--text-1); display: flex; align-items: center; gap: 0.5rem; }
 .block-subtitle { font-size: 0.7rem; color: var(--text-3); margin-top: 0.15rem; }
+
+/* Ocultar flecha fea de datalist en Webkit */
+input::-webkit-calendar-picker-indicator { display: none !important; }
 </style>
 @endsection
 
@@ -45,11 +48,11 @@
         {{-- Header Consistente --}}
         <div class="flex items-center gap-4 mb-8">
             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--neon)] to-[var(--neon-dark)] flex items-center justify-center shadow-lg text-white">
-                <i class="fas fa-cube text-xl"></i>
+                <i class="fas fa-layer-group text-xl"></i>
             </div>
             <div>
-                <h2 class="text-2xl font-bold text-[var(--text-1)]">Nuevo Módulo</h2>
-                <p class="text-xs text-[var(--text-3)] mt-1 tracking-wide">Registro de nueva funcionalidad para la matriz y el menú.</p>
+                <h2 class="text-2xl font-bold text-[var(--text-1)]">Constructor de Módulos</h2>
+                <p class="text-xs text-[var(--text-3)] mt-1 tracking-wide">Agrega nuevas secciones al sistema y a la matriz de accesos.</p>
             </div>
         </div>
 
@@ -58,23 +61,23 @@
             {{-- BLOQUE 1: INFORMACIÓN DEL MÓDULO --}}
             <div class="stacked-block">
                 <div class="block-header">
-                    <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)]">
+                    <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)] border border-[var(--surface-4)]">
                         <i class="fas fa-tag"></i>
                     </div>
                     <div>
-                        <h3 class="block-title">Identificador del Módulo</h3>
-                        <p class="block-subtitle">Define el nombre visible en la matriz de permisos.</p>
+                        <h3 class="block-title">Identidad del Módulo</h3>
+                        <p class="block-subtitle">El nombre técnico y visual para el control de accesos (RBAC).</p>
                     </div>
                 </div>
                 
                 <div class="pl-11">
                     <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Nombre del Módulo <span class="text-[var(--neon)]">*</span></label>
-                    <input type="text" id="strNombreModulo" required maxlength="70" placeholder="Ej. Gestión de Inventarios" class="input-premium" autocomplete="off" autofocus>
+                    <input type="text" id="strNombreModulo" required maxlength="70" placeholder="Ej. Gestión de Inventarios" class="input-premium font-medium" autocomplete="off" autofocus>
                     
-                    <div class="mt-4 bg-[var(--surface-1)] p-3 rounded-lg border border-blue-500/20 flex items-start gap-3">
-                        <i class="fas fa-info-circle text-blue-400 mt-0.5"></i>
+                    <div class="mt-4 bg-[var(--surface-1)] p-3 rounded-lg border border-blue-500/20 flex items-start gap-3 shadow-inner">
+                        <i class="fas fa-shield-halved text-blue-400 mt-0.5"></i>
                         <p class="text-[10px] text-[var(--text-3)] leading-relaxed">
-                            Asegúrate de que el nombre sea único. Este nombre se utilizará automáticamente en la <strong>Matriz de Permisos (RBAC)</strong>.
+                            Al guardar, el sistema inyectará este módulo automáticamente en la <strong>Matriz de Permisos</strong>. Por seguridad, todos los perfiles iniciarán con acceso denegado (0), excepto el Súper Administrador.
                         </p>
                     </div>
                 </div>
@@ -83,49 +86,65 @@
             {{-- BLOQUE 2: CONFIGURACIÓN VISUAL (MENÚ DINÁMICO) --}}
             <div class="stacked-block">
                 <div class="block-header">
-                    <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)]">
+                    <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)] border border-[var(--surface-4)]">
                         <i class="fas fa-bars-staggered"></i>
                     </div>
                     <div>
-                        <h3 class="block-title">Ubicación en el Menú (Slider)</h3>
-                        <p class="block-subtitle">Configura cómo se verá este módulo en el panel izquierdo.</p>
+                        <h3 class="block-title">Apariencia en el Menú Lateral</h3>
+                        <p class="block-subtitle">Personaliza cómo interactuarán los usuarios con este acceso.</p>
                     </div>
                 </div>
                 
                 <div class="pl-11 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
+                    {{-- Datalist de Grupos --}}
                     <div>
-                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Carpeta / Grupo</label>
-                        <input type="text" id="strGrupo" maxlength="100" placeholder="Ej. Finanzas, Seguridad..." class="input-premium" autocomplete="off">
-                        <p class="text-[10px] text-[var(--text-3)] mt-1">Déjalo en blanco para dejar el módulo suelto en el menú.</p>
+                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Carpeta Organizadora</label>
+                        <input list="listaGrupos" type="text" id="strGrupo" maxlength="100" placeholder="Escribe o selecciona..." class="input-premium" autocomplete="off">
+                        
+                        <datalist id="listaGrupos">
+                            @if(isset($grupos) && count($grupos) > 0)
+                                @foreach($grupos as $grupo)
+                                    <option value="{{ $grupo }}">
+                                @endforeach
+                            @endif
+                        </datalist>
+                        
+                        <p class="text-[10px] text-[var(--text-3)] mt-1.5"><i class="fas fa-circle-info mr-1 opacity-70"></i> Si lo dejas vacío, el módulo aparecerá suelto en la raíz del menú.</p>
                     </div>
 
+                    {{-- Icono con Preview Live --}}
                     <div>
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Icono (FontAwesome)</label>
                         <div class="relative">
-                            <i class="fas fa-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs"></i>
-                            <input type="text" id="strIcono" maxlength="100" placeholder="fas fa-chart-pie" class="input-premium pl-8" autocomplete="off">
+                            <i id="iconPreview" class="fas fa-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neon)] text-sm transition-all duration-300"></i>
+                            <input type="text" id="strIcono" maxlength="100" placeholder="fas fa-chart-pie" class="input-premium pl-9 font-mono text-xs" autocomplete="off">
                         </div>
-                        <p class="text-[10px] text-[var(--text-3)] mt-1">Por defecto: <i class="fas fa-cube mx-1"></i> fas fa-cube</p>
+                        <p class="text-[10px] text-[var(--text-3)] mt-1.5"><i class="fas fa-magnifying-glass mr-1 opacity-70"></i> Escribe la clase para ver la vista previa.</p>
                     </div>
 
+                    {{-- Ruta --}}
                     <div class="md:col-span-2">
-                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Ruta del Sistema (Laravel Route)</label>
+                        <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase">Enrutamiento (Laravel Route Name)</label>
                         <div class="relative">
                             <i class="fas fa-link absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs"></i>
-                            <input type="text" id="strRuta" maxlength="100" placeholder="Ej. inventarios.index" class="input-premium pl-8 font-mono text-xs" autocomplete="off">
+                            <input type="text" id="strRuta" maxlength="100" placeholder="Ej. ventas.index" class="input-premium pl-9 font-mono text-xs text-blue-500" autocomplete="off">
                         </div>
-                        <p class="text-[10px] text-[var(--text-3)] mt-1">Nombre de la ruta configurada en web.php</p>
+                        <p class="text-[10px] text-[var(--text-3)] mt-1.5 leading-relaxed">
+                            <i class="fas fa-wand-magic-sparkles mr-1 text-[var(--neon)] opacity-70"></i> 
+                            Si lo dejas en blanco, el sistema le asignará la <strong>Vista Genérica de Construcción</strong> automáticamente para que puedas diseñarlo más adelante sin que el sistema falle.
+                        </p>
                     </div>
                 </div>
             </div>
 
             {{-- Footer de Acciones --}}
-            <div class="flex items-center justify-between border-t border-[var(--surface-4)] pt-6">
+            <div class="flex items-center justify-between border-t border-[var(--surface-4)] pt-6 mt-4">
                 <a href="{{ route('modulo.index') }}" class="text-xs font-bold text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors">
                     <i class="fas fa-arrow-left mr-1"></i> Cancelar y volver
                 </a>
                 <button type="submit" id="btnGuardar" class="btn-primary flex items-center gap-3 py-3 px-10 rounded-xl font-bold shadow-xl shadow-neon-sm transition-all hover:scale-[1.02] active:scale-[0.98]">
-                    <i class="fas fa-cloud-arrow-up"></i> Registrar Módulo
+                    <i class="fas fa-hammer"></i> Construir Módulo
                 </button>
             </div>
 
@@ -143,6 +162,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputIcono  = document.getElementById('strIcono');
     const inputRuta   = document.getElementById('strRuta');
     const btnGuardar  = document.getElementById('btnGuardar');
+    const iconPreview = document.getElementById('iconPreview');
+
+    // 🎨 Live Preview del Icono
+    inputIcono.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        iconPreview.className = val ? `${val} absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neon)] text-sm transition-all duration-300` : 'fas fa-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs transition-all duration-300';
+    });
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -150,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const nombre = inputNombre.value.trim();
         if(!nombre) return;
 
-        btnGuardar.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Registrando...';
+        btnGuardar.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Procesando Matriz...';
         btnGuardar.disabled = true;
 
         try {
@@ -172,26 +198,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             
             if (res.ok && data.success) {
-                if(window.showToast) window.showToast('Módulo registrado y añadido al menú', 'success');
-                setTimeout(() => window.location.href = "{{ route('modulo.index') }}", 1000);
+                if(window.showToast) window.showToast('Módulo construido y protegido exitosamente', 'success');
+                setTimeout(() => window.location.href = "{{ route('modulo.index') }}", 1200);
             } else {
-                // 🛡️ TRADUCTOR DE ERRORES DE LARAVEL A HUMANO
                 let errorMsg = data.message || 'Ocurrió un error al registrar el módulo.';
                 if (data.errors) {
                     const primerError = Object.values(data.errors)[0][0];
                     if (primerError.includes('already been taken')) {
-                        errorMsg = 'Este nombre de módulo ya está registrado. Elige uno diferente.';
+                        errorMsg = 'Atención: Este nombre de módulo ya existe en la base de datos.';
                     } else {
                         errorMsg = primerError; 
                     }
                 } else if (data.message && data.message.includes('already been taken')) {
-                    errorMsg = 'Este nombre de módulo ya está registrado. Elige uno diferente.';
+                    errorMsg = 'Atención: Este nombre de módulo ya existe en la base de datos.';
                 }
                 throw new Error(errorMsg);
             }
         } catch (err) {
             if(window.showToast) window.showToast(err.message, 'error');
-            btnGuardar.innerHTML = '<i class="fas fa-cloud-arrow-up"></i> Registrar Módulo';
+            btnGuardar.innerHTML = '<i class="fas fa-hammer"></i> Construir Módulo';
             btnGuardar.disabled = false;
         }
     });

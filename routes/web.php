@@ -143,4 +143,7 @@ Route::middleware(['jwt.verify', 'single.session'])->group(function () {
     Route::get('/principal-2-1', function () { return view('modules.blank', ['title' => 'Principal 2.1']); })->name('p2.1.index');
     Route::get('/principal-2-2', function () { return view('modules.blank', ['title' => 'Principal 2.2']); })->name('p2.2.index');
 
+    // ── NUEVO: Ruta Genérica para Módulos Creados Dinámicamente ──
+    Route::get('/modulo-generico/{id}', [ModuloController::class, 'construccion'])->name('modulo.generico');
+
 });
