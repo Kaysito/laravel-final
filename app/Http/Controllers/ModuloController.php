@@ -6,43 +6,96 @@ use Illuminate\Http\Request;
 use App\Models\Modulo;
 use App\Models\Perfil;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class ModuloController extends Controller
 {
-    // =========================================================
-    // 📖 LISTADO PRINCIPAL (API JSON para la tabla)
-    // =========================================================
-    public function listar(Request $request)
-    {
-        $buscar = $request->query('buscar');
-        $query = Modulo::orderBy('id', 'ASC');
+    protected $cacheKey = 'sidebar_modulos_menu';
 
-        if (!empty($buscar)) {
-            $query->where('strNombreModulo', 'like', '%' . $buscar . '%');
-        }
-
-        return response()->json($query->paginate(5));
+    // =========================================================
+    // 🧠 MOTOR DE CARPETAS (CORREGIDO)
+    // Extrae SOLO los nombres de las carpetas o los padres reales
+    // =========================================================
+    private function obtenerCarpetas() {
+        return Modulo::all()->map(function($m) {
+            $g = trim($m->strGrupo ?? '');
+            // Si el grupo no está vacío, ese es el Padre. 
+            // Si está vacío, el propio nombre del módulo es el Padre.
+            return $g !== '' ? $g : trim($m->strNombreModulo);
+        })->unique()->filter()->sort()->values()->toArray();
     }
 
     // =========================================================
-    // ➕ VISTA: NUEVO MÓDULO (vistasmodulos/nmodulos.blade.php)
+    // 📖 LISTADO PRINCIPAL (Paginación Segura en Memoria)
+    // =========================================================
+    public function listar(Request $request)
+    {
+        $buscar = trim($request->query('buscar'));
+        $modulosBase = Modulo::all();
+
+        // 1. Filtro de Búsqueda
+        if (!empty($buscar)) {
+            $term = strtolower($buscar);
+            $modulosBase = $modulosBase->filter(function($m) use ($term) {
+                $nombre = strtolower($m->strNombreModulo);
+                $grupo = strtolower($m->strGrupo ?? '');
+                return str_contains($nombre, $term) || str_contains($grupo, $term);
+            });
+        }
+
+        // 2. Extraer a los Padres Reales
+        $gruposUnicos = $modulosBase->map(function ($m) {
+            $g = trim($m->strGrupo ?? '');
+            return !empty($g) ? $g : trim($m->strNombreModulo);
+        })->unique()->sort()->values();
+
+        // 3. Paginación Manual (5 Padres por página)
+        $page = (int) $request->query('page', 1);
+        $perPage = 5;
+        $totalGrupos = $gruposUnicos->count();
+        $gruposPagina = $gruposUnicos->slice(($page - 1) * $perPage, $perPage)->toArray();
+
+        // 4. Traer a toda la familia
+        $familia = Modulo::all()->filter(function($m) use ($gruposPagina) {
+            $g = trim($m->strGrupo ?? '');
+            $grupoVirtual = !empty($g) ? $g : trim($m->strNombreModulo);
+            return in_array($grupoVirtual, $gruposPagina);
+        })->sortBy(function($m) {
+            $g = trim($m->strGrupo ?? '');
+            $grupoVirtual = !empty($g) ? $g : trim($m->strNombreModulo);
+            
+            // Prioridad: 0 si es el Padre, 1 si es un Hijo
+            $isParent = ($g === '' || strtolower($g) === strtolower(trim($m->strNombreModulo))) ? 0 : 1;
+            
+            return $grupoVirtual . '-' . $isParent . '-' . str_pad($m->id, 5, '0', STR_PAD_LEFT);
+        })->values();
+
+        return response()->json([
+            'current_page' => $page,
+            'data'         => $familia,
+            'from'         => $totalGrupos > 0 ? (($page - 1) * $perPage) + 1 : null,
+            'last_page'    => ceil($totalGrupos / $perPage) ?: 1,
+            'to'           => min($page * $perPage, $totalGrupos),
+            'total'        => $totalGrupos,
+        ]);
+    }
+
+    // =========================================================
+    // ➕ VISTA: NUEVO MÓDULO 
     // =========================================================
     public function crear()
     {
-        // Extraemos los nombres de las carpetas (grupos) únicos que ya existen en la DB
-        $grupos = Modulo::whereNotNull('strGrupo')
-                        ->where('strGrupo', '!=', '')
-                        ->distinct()
-                        ->pluck('strGrupo');
+        // Llamamos al motor de carpetas que ya no jala a los hijos
+        $grupos = $this->obtenerCarpetas();
 
-        return view('modules.vistasmodulos.nmodulos', [
+        return view('modules.vistasmodulos.nmodulo', [
             'title' => 'Nuevo Módulo',
             'grupos' => $grupos
         ]);
     }
 
     // =========================================================
-    // 💾 PROCESO: GUARDAR E INYECTAR EN LA MATRIZ
+    // 💾 PROCESO: GUARDAR (A PRUEBA DE BALAS)
     // =========================================================
     public function guardar(Request $request)
     {
@@ -53,12 +106,13 @@ class ModuloController extends Controller
             'strIcono'        => 'nullable|string|max:100'
         ]);
 
-        $modulo = Modulo::create([
-            'strNombreModulo' => $request->strNombreModulo,
-            'strGrupo'        => $request->strGrupo,
-            'strRuta'         => $request->strRuta,
-            'strIcono'        => $request->strIcono ?? 'fas fa-cube',
-        ]);
+        // Guardado forzado burlando el Mass Assignment de Laravel
+        $modulo = new Modulo();
+        $modulo->strNombreModulo = $request->strNombreModulo;
+        $modulo->strGrupo = $request->strGrupo;
+        $modulo->strRuta = $request->strRuta;
+        $modulo->strIcono = $request->strIcono ?? 'fas fa-cube';
+        $modulo->save();
 
         $perfiles = Perfil::all();
         $permisosInyectar = [];
@@ -66,7 +120,6 @@ class ModuloController extends Controller
 
         foreach ($perfiles as $perfil) {
             $esAdmin = ($perfil->id == 1) ? 1 : 0; 
-
             $permisosInyectar[] = [
                 'idPerfil'    => $perfil->id,
                 'idModulo'    => $modulo->id,
@@ -84,10 +137,12 @@ class ModuloController extends Controller
             DB::table('permisos_perfil')->insert($permisosInyectar);
         }
 
+        Cache::forget($this->cacheKey);
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true, 
-                'mensaje' => '✅ Módulo registrado e integrado a la Matriz de Seguridad.',
+                'mensaje' => '✅ Módulo registrado e integrado con éxito.',
                 'id' => $modulo->id
             ]);
         }
@@ -96,19 +151,22 @@ class ModuloController extends Controller
     }
 
     // =========================================================
-    // ✏️ VISTA: EDITAR MÓDULO (vistasmodulos/emodulos.blade.php)
+    // ✏️ VISTA: EDITAR MÓDULO 
     // =========================================================
     public function editar($id)
     {
         $modulo = Modulo::findOrFail($id);
+        $grupos = $this->obtenerCarpetas();
+
         return view('modules.vistasmodulos.emodulos', [
             'title' => 'Editar Módulo',
-            'modulo' => $modulo
+            'modulo' => $modulo,
+            'grupos' => $grupos
         ]);
     }
 
     // =========================================================
-    // 🔄 PROCESO: ACTUALIZAR
+    // 🔄 PROCESO: ACTUALIZAR (A PRUEBA DE BALAS)
     // =========================================================
     public function actualizar(Request $request, $id)
     {
@@ -121,12 +179,14 @@ class ModuloController extends Controller
 
         $modulo = Modulo::findOrFail($id);
         
-        $datosActualizar = $request->all();
-        if (empty($datosActualizar['strIcono'])) {
-            $datosActualizar['strIcono'] = 'fas fa-cube';
-        }
+        // Actualizado forzado burlando el Mass Assignment de Laravel
+        $modulo->strNombreModulo = $request->strNombreModulo;
+        $modulo->strGrupo = $request->strGrupo;
+        $modulo->strRuta = $request->strRuta;
+        $modulo->strIcono = empty($request->strIcono) ? 'fas fa-cube' : $request->strIcono;
+        $modulo->save();
 
-        $modulo->update($datosActualizar);
+        Cache::forget($this->cacheKey);
 
         return response()->json([
             'success' => true,
@@ -135,15 +195,11 @@ class ModuloController extends Controller
     }
 
     // =========================================================
-    // 🔍 VISTA: DETALLE (vistasmodulos/dmodulos.blade.php)
+    // 🔍 VISTA: DETALLE
     // =========================================================
     public function detalle($id)
     {
-        $modulo = Modulo::find($id);
-
-        if (!$modulo) {
-            return redirect()->route('modulo.index')->with('error', 'El módulo no existe.');
-        }
+        $modulo = Modulo::findOrFail($id);
 
         $permisosRelacionados = DB::table('permisos_perfil')
             ->join('perfiles', 'permisos_perfil.idPerfil', '=', 'perfiles.id')
@@ -165,20 +221,21 @@ class ModuloController extends Controller
     }
 
     // =========================================================
-    // 🗑️ ELIMINAR (API)
+    // 🗑️ ELIMINAR 
     // =========================================================
     public function eliminar($id)
     {
         $modulo = Modulo::find($id);
         if ($modulo) {
             $modulo->delete();
+            Cache::forget($this->cacheKey);
             return response()->json(['success' => true, 'mensaje' => 'Módulo eliminado']);
         }
         return response()->json(['success' => false, 'message' => 'No encontrado'], 404);
     }
 
     // =========================================================
-    // 🚧 VISTA: CONSTRUCCIÓN (Comodín para nuevos módulos)
+    // 🚧 VISTA: CONSTRUCCIÓN (Comodín)
     // =========================================================
     public function construccion($id)
     {

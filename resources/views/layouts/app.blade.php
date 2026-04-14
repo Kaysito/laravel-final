@@ -144,44 +144,101 @@
 
             <div class="section-divider my-2"></div>
             
-            {{-- MAGIA DINÁMICA: Dibujamos los módulos desde la Base de Datos --}}
-            @if(isset($modulosMenu))
-                @foreach($modulosMenu as $grupo => $modulos)
-                    
-                    @if(empty($grupo))
-                        {{-- Módulos Sueltos (Sin Carpeta) --}}
-                        @foreach($modulos as $mod)
-                            <a href="{{ $mod->strRuta && Route::has($mod->strRuta) ? route($mod->strRuta) : '#' }}" data-modulo="{{ $mod->strNombreModulo }}"
-                               class="nav-item {{ $mod->strRuta && request()->routeIs($mod->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                                <i class="nav-icon {{ $mod->strIcono ?? 'fas fa-cube' }} w-4 text-center"></i>
-                                <span>{{ $mod->strNombreModulo }}</span>
-                            </a>
-                        @endforeach
-                    @else
-                        {{-- Módulos Agrupados (Carpeta / Slider) --}}
-                        @php $folderId = 'submenu-' . Str::slug($grupo); @endphp
-                        <div class="menu-group">
-                            <button onclick="toggleSubmenu('{{ $folderId }}', this)" class="submenu-btn">
-                                <div class="flex items-center gap-3">
-                                    <i class="fas fa-folder w-4 text-center text-[var(--text-3)]"></i>
-                                    <span class="font-medium">{{ $grupo }}</span>
-                                </div>
-                                <i class="fas fa-chevron-down submenu-icon text-xs"></i>
-                            </button>
-                            <div id="{{ $folderId }}" class="submenu-content pl-9 mt-1 space-y-1">
-                                @foreach($modulos as $mod)
-                                    <a href="{{ $mod->strRuta && Route::has($mod->strRuta) ? route($mod->strRuta) : '#' }}" data-modulo="{{ $mod->strNombreModulo }}"
-                                       class="nav-item {{ $mod->strRuta && request()->routeIs($mod->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
-                                        <i class="nav-icon {{ $mod->strIcono ?? 'fas fa-cube' }} w-4 text-center text-[10px]"></i>
-                                        <span>{{ $mod->strNombreModulo }}</span>
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
+            {{-- MAGIA DINÁMICA: Reconstrucción Inteligente del Menú --}}
+            @php
+                $menuInteligente = [];
+                if(isset($modulosMenu)) {
+                    // 1. Aplanamos la colección vieja para procesarla
+                    $todosLosModulos = collect();
+                    foreach($modulosMenu as $grupo => $mods) {
+                        foreach($mods as $m) {
+                            $todosLosModulos->push($m);
+                        }
+                    }
 
-                @endforeach
-            @endif
+                    // 2. Ordenamos todo por nombre
+                    $todosLosModulos = $todosLosModulos->sortBy('strNombreModulo');
+
+                    // 3. Reagrupamos inteligentemente (Padre e Hijos juntos)
+                    foreach($todosLosModulos as $m) {
+                        $g = trim($m->strGrupo ?? '');
+                        $n = trim($m->strNombreModulo);
+                        
+                        // Es Padre si su grupo está vacío, o es igual a su nombre
+                        $isPadre = ($g === '' || strtolower($g) === strtolower($n));
+                        $nombreCarpeta = $isPadre ? $n : $g;
+
+                        if(!isset($menuInteligente[$nombreCarpeta])) {
+                            $menuInteligente[$nombreCarpeta] = ['padre' => null, 'hijos' => []];
+                        }
+
+                        if($isPadre) {
+                            $menuInteligente[$nombreCarpeta]['padre'] = $m;
+                        } else {
+                            $menuInteligente[$nombreCarpeta]['hijos'][] = $m;
+                        }
+                    }
+                    
+                    // Ordenamos las carpetas alfabéticamente
+                    ksort($menuInteligente);
+                }
+            @endphp
+
+            {{-- DIBUJAMOS EL MENÚ CORREGIDO --}}
+            @foreach($menuInteligente as $carpeta => $datos)
+                @php
+                    $padre = $datos['padre'];
+                    $hijos = $datos['hijos'];
+                    $tieneHijos = count($hijos) > 0;
+                    
+                    // Si el padre existe, usamos su icono, si no, una carpeta por defecto
+                    $iconoCarpeta = $padre ? ($padre->strIcono ?? 'fas fa-folder') : 'fas fa-folder';
+                @endphp
+
+                @if(!$tieneHijos && $padre)
+                    {{-- CASO 1: Módulo Suelto (Es un Padre que no tiene hijos todavía) --}}
+                    <a href="{{ $padre->strRuta && Route::has($padre->strRuta) ? route($padre->strRuta) : '#' }}" data-modulo="{{ $padre->strNombreModulo }}"
+                       class="nav-item {{ $padre->strRuta && request()->routeIs($padre->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                        <i class="nav-icon {{ $padre->strIcono ?? 'fas fa-cube' }} w-4 text-center"></i>
+                        <span>{{ $padre->strNombreModulo }}</span>
+                    </a>
+
+                @elseif($tieneHijos)
+                    {{-- CASO 2: Carpeta con Hijos (Acordeón) --}}
+                    @php $folderId = 'submenu-' . Str::slug($carpeta); @endphp
+                    <div class="menu-group">
+                        <button onclick="toggleSubmenu('{{ $folderId }}', this)" class="submenu-btn">
+                            <div class="flex items-center gap-3">
+                                <i class="{{ $iconoCarpeta }} w-4 text-center text-[var(--text-3)]"></i>
+                                <span class="font-medium">{{ $carpeta }}</span>
+                            </div>
+                            <i class="fas fa-chevron-down submenu-icon text-xs"></i>
+                        </button>
+                        
+                        <div id="{{ $folderId }}" class="submenu-content pl-9 mt-1 space-y-1">
+                            
+                            {{-- Si la Carpeta "Padre" tiene una URL real asignada, creamos un sublink para ir a ella --}}
+                            @if($padre && $padre->strRuta)
+                                <a href="{{ Route::has($padre->strRuta) ? route($padre->strRuta) : '#' }}" data-modulo="{{ $padre->strNombreModulo }}"
+                                   class="nav-item {{ request()->routeIs($padre->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                                    <i class="nav-icon fas fa-house w-4 text-center text-[10px]"></i>
+                                    <span>Inicio de {{ $carpeta }}</span>
+                                </a>
+                            @endif
+
+                            {{-- Imprimimos los Hijos --}}
+                            @foreach($hijos as $hijo)
+                                <a href="{{ $hijo->strRuta && Route::has($hijo->strRuta) ? route($hijo->strRuta) : '#' }}" data-modulo="{{ $hijo->strNombreModulo }}"
+                                   class="nav-item {{ $hijo->strRuta && request()->routeIs($hijo->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
+                                    <i class="nav-icon {{ $hijo->strIcono ?? 'fas fa-cube' }} w-4 text-center text-[10px]"></i>
+                                    <span>{{ $hijo->strNombreModulo }}</span>
+                                </a>
+                            @endforeach
+
+                        </div>
+                    </div>
+                @endif
+            @endforeach
 
         </nav>
 
@@ -275,14 +332,12 @@
             }
         }
 
-        // Lógica del Acordeón (Sliders)
         function toggleSubmenu(id, btnElement) {
             const content = document.getElementById(id);
             content.classList.toggle('open');
             btnElement.classList.toggle('open');
         }
 
-        // Abrir automáticamente el submenú que contenga un enlace activo
         function autoOpenActiveMenu() {
             const activeLink = document.querySelector('.submenu-content .nav-item.active');
             if (activeLink) {
@@ -309,7 +364,6 @@
 
         // 2. APLICADOR VISUAL DE PERMISOS
         window.aplicarPermisosVisuales = function() {
-            // Oculta/Muestra enlaces individuales
             document.querySelectorAll('#sidebarNav [data-modulo]').forEach(enlace => {
                 const modulo = enlace.getAttribute('data-modulo');
                 if (!window.tienePermiso(modulo, 'bitConsulta')) {
@@ -319,7 +373,6 @@
                 }
             });
 
-            // Ocultar el grupo entero si no tiene hijos visibles
             document.querySelectorAll('.menu-group').forEach(group => {
                 const submenuContent = group.querySelector('.submenu-content');
                 if(submenuContent) {
@@ -335,24 +388,53 @@
             });
         };
 
+        // 🟢 NUEVO: REFRESCO EN VIVO DEL SIDEBAR 🟢
+        window.refrescarSidebarEnVivo = async function() {
+            try {
+                const res = await fetch(window.location.href);
+                const text = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const nuevoNav = doc.getElementById('sidebarNav');
+                
+                if (nuevoNav) {
+                    document.getElementById('sidebarNav').innerHTML = nuevoNav.innerHTML;
+                    window.aplicarPermisosVisuales();
+                    autoOpenActiveMenu();
+                }
+            } catch(e) { console.error("Fallo al actualizar el Sidebar", e); }
+        };
+
         document.addEventListener('DOMContentLoaded', () => {
             window.aplicarPermisosVisuales();
             autoOpenActiveMenu(); 
         });
 
-        // 3. 🚀 MOTOR GLOBAL DE PERMISOS EN TIEMPO REAL 🚀
+        // 3. 🚀 MOTOR GLOBAL DE PERMISOS Y ACTUALIZACIONES EN TIEMPO REAL 🚀
+        let _cacheModulosHash = null;
+
         setInterval(async () => {
             try {
                 const userDataStr = localStorage.getItem('user_data');
                 if (!userDataStr) return;
                 
                 let userData = JSON.parse(userDataStr);
-                if (userData.perfil === 1) return;
 
+                // ── Módulo Auto-Refresh (Aplica para todos, incluyendo Super Admin) ──
                 const resCat = await fetch('/api/permisos/catalogos', { headers: { 'Accept': 'application/json' }});
                 if (!resCat.ok) return;
                 const dataCat = await resCat.json();
                 const modulos = dataCat.modulos || [];
+
+                // Detectamos si hubo un cambio estructural (Módulo nuevo, borrado, editado)
+                const currentHash = JSON.stringify(modulos);
+                if (_cacheModulosHash !== null && _cacheModulosHash !== currentHash) {
+                    window.refrescarSidebarEnVivo(); // Si cambió, actualizamos el DOM en silencio
+                }
+                _cacheModulosHash = currentHash;
+
+                // ── Validación de Permisos (Ignorar si es Super Admin) ──
+                if (userData.perfil === 1) return; 
 
                 const resPerm = await fetch(`/api/permisos?perfil=${userData.perfil}`, { headers: { 'Accept': 'application/json' }});
                 if (!resPerm.ok) return;
@@ -389,7 +471,7 @@
                     }
                 }
             } catch (e) {
-                // Fallo silencioso si hay problemas de red
+                // Fallo silencioso
             }
         }, 5000);
 

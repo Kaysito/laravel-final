@@ -16,9 +16,10 @@
 .skeleton { background: linear-gradient(90deg, var(--surface-3) 25%, var(--surface-4) 50%, var(--surface-3) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; }
 @keyframes shimmer { 0%{background-position:200% 0}100%{background-position:-200% 0} }
 
-/* ── Table Transitions (CORREGIDO: Sin transform scale para evitar el bug del scroll) ── */
+/* ── Table Transitions ── */
 .module-row { transition: background-color 0.2s ease; }
 .module-row:hover { background-color: var(--surface-3); }
+.child-row { transition: all 0.2s ease-in-out; }
 
 /* ── Search Input Fix ── */
 .search-wrapper { position: relative; display: flex; align-items: center; }
@@ -50,10 +51,10 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="card px-5 py-4 flex items-center gap-4 group hover:scale-105 transition-transform">
             <div class="w-12 h-12 rounded-xl bg-[rgba(230,55,87,0.1)] flex items-center justify-center border border-[rgba(230,55,87,0.2)] flex-shrink-0 shadow-sm">
-                <i class="fas fa-cubes text-[var(--neon)] text-lg"></i>
+                <i class="fas fa-layer-group text-[var(--neon)] text-lg"></i>
             </div>
             <div>
-                <p class="text-[10px] font-mono text-[var(--text-3)] uppercase tracking-widest mb-0.5">Total módulos</p>
+                <p class="text-[10px] font-mono text-[var(--text-3)] uppercase tracking-widest mb-0.5">Módulos Padre</p>
                 <p id="statTotal" class="text-2xl font-bold text-[var(--text-1)]">—</p>
             </div>
         </div>
@@ -100,11 +101,11 @@
         {{-- Table --}}
         <div class="overflow-x-auto bg-[var(--surface-1)]">
             <table class="w-full text-sm whitespace-nowrap">
-                <thead class="bg-[var(--surface-2)]">
+                <thead class="bg-[var(--surface-2)] border-b border-[var(--surface-4)]">
                     <tr>
-                        <th class="py-4 px-6 text-left text-[10px] font-bold tracking-widest text-[var(--text-3)] uppercase border-b border-[var(--surface-4)] w-16">ID</th>
-                        <th class="py-4 px-6 text-left text-[10px] font-bold tracking-widest text-[var(--text-3)] uppercase border-b border-[var(--surface-4)]">Nombre del Módulo</th>
-                        <th class="py-4 px-6 text-right text-[10px] font-bold tracking-widest text-[var(--text-3)] uppercase border-b border-[var(--surface-4)] w-32">Acciones</th>
+                        <th class="py-4 px-4 w-10"></th>
+                        <th class="py-4 px-6 text-left text-[10px] font-bold tracking-widest text-[var(--text-3)] uppercase">Estructura del Módulo</th>
+                        <th class="py-4 px-6 text-right text-[10px] font-bold tracking-widest text-[var(--text-3)] uppercase w-32">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tablaBody" class="divide-y divide-[var(--surface-4)]">
@@ -121,10 +122,10 @@
             <p class="text-sm text-[var(--text-3)]">No encontramos módulos con ese criterio.</p>
         </div>
 
-        {{-- 🟢 Paginación Estándar (<< < > >>) --}}
+        {{-- 🟢 Paginación --}}
         <div id="paginacionWrapper" class="hidden px-6 py-4 border-t border-[var(--surface-4)] bg-[var(--surface-2)] flex flex-col sm:flex-row items-center justify-between gap-4">
             <p class="text-[10px] font-mono uppercase text-[var(--text-3)] tracking-widest">
-                Mostrando <span id="infoRange" class="text-[var(--text-1)] font-bold">—</span> de <span id="infoTotal" class="text-[var(--text-1)] font-bold">—</span> módulos
+                Mostrando <span id="infoRange" class="text-[var(--text-1)] font-bold">—</span> de <span id="infoTotal" class="text-[var(--text-1)] font-bold">—</span> padres
             </p>
             <div id="pagBotones" class="flex items-center gap-1.5"></div>
         </div>
@@ -178,13 +179,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let idEliminar = null;
     let timeoutBusqueda;
-    let paginaActual = 1; // 👈 Rastrear página para actualización en vivo
+    let paginaActual = 1;
     const localCache = new Map(); 
 
     const skeletonHTML = Array(5).fill().map(() => `
         <tr>
-            <td class="py-4 px-6"><div class="skeleton h-4 w-6 rounded"></div></td>
-            <td class="py-4 px-6"><div class="flex items-center gap-3"><div class="skeleton w-8 h-8 rounded-lg"></div><div class="skeleton h-4 w-32 rounded"></div></div></td>
+            <td class="py-4 px-4"><div class="skeleton h-4 w-4 rounded"></div></td>
+            <td class="py-4 px-6"><div class="flex items-center gap-3"><div class="skeleton w-8 h-8 rounded-lg"></div><div class="skeleton h-4 w-48 rounded"></div></div></td>
             <td class="py-4 px-6"><div class="skeleton h-8 w-24 rounded-md ml-auto"></div></td>
         </tr>
     `).join('');
@@ -209,7 +210,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await res.json();
             
-            // 👈 MAGIA: Comparamos si cambió algo para evitar parpadeos
             const cacheActual = localCache.get(cacheKey);
             const datosCambiaron = JSON.stringify(cacheActual?.data) !== JSON.stringify(data.data);
 
@@ -227,10 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderPaginacion(data);
         
         elements.statTotal.textContent = data.total || 0;
-        elements.tableCount.textContent = `${data.total || 0} MÓDULOS`;
+        elements.tableCount.textContent = `${data.total || 0} PADRES`;
         elements.btnLimpiar.style.display = elements.buscador.value.length > 0 ? 'block' : 'none';
     };
 
+    // 🚀 LÓGICA DE ACORDEÓN (PADRE E HIJOS) REPARADA 🚀
     const renderTabla = (modulos) => {
         if (modulos.length === 0) {
             elements.tablaBody.innerHTML = '';
@@ -241,40 +242,127 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.emptyState.classList.add('hidden');
         elements.pagWrapper.classList.remove('hidden');
 
-        let html = '';
-        for (let i = 0; i < modulos.length; i++) {
-            const m = modulos[i];
+        // 1. Agrupar la data actual de forma inteligente
+        const grupos = {};
+        
+        modulos.forEach(m => {
+            // Un módulo es "Padre" SI y SÓLO SI:
+            // 1. Su strGrupo está vacío (null o "")
+            // 2. O su strGrupo es exactamente igual a su strNombreModulo
+            const isPadre = !m.strGrupo || m.strGrupo.trim() === '' || m.strGrupo.trim().toLowerCase() === m.strNombreModulo.trim().toLowerCase();
             
-            const btnVer = puedeDetalle 
-                ? `<a href="/modulos/${m.id}/detalle" class="action-btn view tooltip hover:text-blue-400" data-tip="Ver"><i class="fas fa-eye text-xs"></i></a>` 
-                : '';
-            const btnEditar = puedeEditar 
-                ? `<a href="/modulos/${m.id}/editar" class="action-btn edit tooltip hover:text-yellow-500" data-tip="Editar"><i class="fas fa-pen text-xs"></i></a>` 
-                : '';
-            const btnEliminar = puedeEliminar 
-                ? `<button data-action="delete" data-id="${m.id}" data-name="${m.strNombreModulo}" class="action-btn danger tooltip hover:text-red-500" data-tip="Eliminar"><i class="fas fa-trash-can text-xs"></i></button>` 
-                : '';
+            // El nombre de la "Carpeta" donde debe ir:
+            const grupoName = isPadre ? m.strNombreModulo.trim() : m.strGrupo.trim();
 
+            if (!grupos[grupoName]) {
+                grupos[grupoName] = { parent: null, children: [] };
+            }
+
+            if (isPadre) {
+                // Si encontramos al Padre real de esta familia, lo asignamos.
+                grupos[grupoName].parent = m;
+            } else {
+                // Si no es padre, forzosamente es un hijo que va dentro de esa carpeta.
+                grupos[grupoName].children.push(m);
+            }
+        });
+
+        // 2. Generar HTML
+        let html = '';
+        Object.keys(grupos).forEach(grupoName => {
+            const group = grupos[grupoName];
+            const hasParent = group.parent !== null;
+            
+            // Si no nos llegó el objeto Padre desde la DB (por la paginación), creamos uno "Virtual"
+            const parentModulo = group.parent || { id: '-', strNombreModulo: grupoName, strIcono: 'fas fa-folder-open' };
+            const groupId = `grp-${grupoName.replace(/[^a-zA-Z0-9]/g, '-')}`;
+
+            // Botones de Acción para el Padre (Solo si es un registro real de la BD)
+            let btnVerP = '', btnEditarP = '', btnEliminarP = '';
+            if (hasParent) {
+                btnVerP = puedeDetalle ? `<a href="/modulos/${parentModulo.id}/detalle" class="action-btn view tooltip hover:text-blue-400" data-tip="Ver"><i class="fas fa-eye text-xs"></i></a>` : '';
+                btnEditarP = puedeEditar ? `<a href="/modulos/${parentModulo.id}/editar" class="action-btn edit tooltip hover:text-yellow-500" data-tip="Editar"><i class="fas fa-pen text-xs"></i></a>` : '';
+                btnEliminarP = puedeEliminar ? `<button data-action="delete" data-id="${parentModulo.id}" data-name="${parentModulo.strNombreModulo}" class="action-btn danger tooltip hover:text-red-500" data-tip="Eliminar"><i class="fas fa-trash-can text-xs"></i></button>` : '';
+            }
+
+            // DIBUJAR FILA PADRE
             html += `
-            <tr class="module-row">
-                <td class="py-4 px-6 font-mono text-xs text-[var(--text-3)]">#${String(m.id).padStart(2, '0')}</td>
+            <tr class="module-row cursor-pointer bg-[var(--surface-1)] hover:bg-[var(--surface-2)]" data-toggle="${groupId}">
+                <td class="py-4 px-4 w-10 text-center select-none">
+                    ${group.children.length > 0 ? `<i class="fas fa-chevron-right text-[var(--text-3)] transition-transform duration-200" id="icon-${groupId}"></i>` : '<i class="fas fa-minus text-[var(--surface-4)] text-[10px]"></i>'}
+                </td>
                 <td class="py-4 px-6">
                     <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-[var(--surface-3)] flex items-center justify-center border border-[var(--surface-4)]">
-                            <i class="fas fa-cube text-[var(--text-2)] text-xs"></i>
+                        <div class="w-8 h-8 rounded-lg bg-[var(--surface-3)] flex items-center justify-center border border-[var(--surface-4)] text-[var(--neon)]">
+                            <i class="${parentModulo.strIcono || 'fas fa-cube'} text-sm"></i>
                         </div>
-                        <span class="font-bold text-[var(--text-1)] text-sm">${m.strNombreModulo}</span>
+                        <span class="font-bold text-[var(--text-1)] text-sm select-none">${parentModulo.strNombreModulo}</span>
+                        ${!hasParent ? '<span class="text-[9px] bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full ml-2">Agrupación Virtual</span>' : ''}
                     </div>
                 </td>
                 <td class="py-4 px-6 text-right">
-                    <div class="flex items-center justify-end gap-2">${btnVer} ${btnEditar} ${btnEliminar}</div>
+                    <div class="flex items-center justify-end gap-2">${btnVerP} ${btnEditarP} ${btnEliminarP}</div>
                 </td>
             </tr>`;
-        }
+
+            // DIBUJAR FILAS HIJOS
+            group.children.forEach(child => {
+                const btnVerC = puedeDetalle ? `<a href="/modulos/${child.id}/detalle" class="action-btn view tooltip hover:text-blue-400" data-tip="Ver"><i class="fas fa-eye text-xs"></i></a>` : '';
+                const btnEditarC = puedeEditar ? `<a href="/modulos/${child.id}/editar" class="action-btn edit tooltip hover:text-yellow-500" data-tip="Editar"><i class="fas fa-pen text-xs"></i></a>` : '';
+                const btnEliminarC = puedeEliminar ? `<button data-action="delete" data-id="${child.id}" data-name="${child.strNombreModulo}" class="action-btn danger tooltip hover:text-red-500" data-tip="Eliminar"><i class="fas fa-trash-can text-xs"></i></button>` : '';
+
+                html += `
+                <tr class="child-row hidden child-${groupId} bg-[var(--surface-2)]">
+                    <td class="py-3 px-4"></td>
+                    <td class="py-3 px-6 pl-12">
+                        <div class="flex items-center gap-3 relative">
+                            <div class="absolute -left-6 top-1/2 w-4 h-[1px] bg-[var(--surface-4)]"></div> <i class="${child.strIcono || 'fas fa-cube'} text-[var(--text-3)] text-xs"></i>
+                            <span class="text-[var(--text-2)] text-sm">${child.strNombreModulo}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-6 text-right">
+                        <div class="flex items-center justify-end gap-2">${btnVerC} ${btnEditarC} ${btnEliminarC}</div>
+                    </td>
+                </tr>`;
+            });
+        });
+        
         elements.tablaBody.innerHTML = html;
     };
 
-    // ── Paginación Minimalista (<< < > >>) ──
+    // ── Lógica de Eventos ──
+    elements.tablaBody.addEventListener('click', (e) => {
+        const toggleRow = e.target.closest('tr[data-toggle]');
+        if (toggleRow && !e.target.closest('button') && !e.target.closest('a')) {
+            const groupId = toggleRow.dataset.toggle;
+            const children = document.querySelectorAll(`.child-${groupId}`);
+            const icon = document.getElementById(`icon-${groupId}`);
+
+            if (children.length > 0) {
+                const isHidden = children[0].classList.contains('hidden');
+                children.forEach(child => {
+                    if (isHidden) {
+                        child.classList.remove('hidden');
+                        child.classList.add('table-row');
+                    } else {
+                        child.classList.add('hidden');
+                        child.classList.remove('table-row');
+                    }
+                });
+                if (icon) icon.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+            }
+        }
+
+        const btnDelete = e.target.closest('button[data-action="delete"]');
+        if (btnDelete) {
+            const { id, name } = btnDelete.dataset;
+            idEliminar = id;
+            document.getElementById('nombreEliminar').textContent = name;
+            elements.modalEliminar.classList.add('open');
+            setTimeout(() => elements.eliminarContent.classList.remove('scale-95', 'opacity-0'), 10);
+        }
+    });
+
     const renderPaginacion = (data) => {
         elements.pagBotones.innerHTML = '';
         if (!data.last_page || data.last_page <= 1) return;
@@ -300,17 +388,6 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.pagBotones.appendChild(createBtn('fas fa-angles-right', last, current === last));
     };
 
-    elements.tablaBody.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-action="delete"]');
-        if (!btn) return;
-        const { id, name } = btn.dataset;
-
-        idEliminar = id;
-        document.getElementById('nombreEliminar').textContent = name;
-        elements.modalEliminar.classList.add('open');
-        setTimeout(() => elements.eliminarContent.classList.remove('scale-95', 'opacity-0'), 10);
-    });
-
     document.getElementById('btnConfirmarEliminar').onclick = async () => {
         try {
             const res = await fetch(`/api/modulos/${idEliminar}`, {
@@ -320,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if (data.success) {
                 elements.modalEliminar.classList.remove('open');
-                localCache.clear(); // Limpiar caché tras eliminar
+                localCache.clear();
                 cargarModulos();
                 if(window.showToast) window.showToast('Módulo eliminado', 'success');
             }
@@ -348,10 +425,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cargarModulos();
 
-    // 🚀 MOTOR DE "TIEMPO REAL" (Silent Polling) 🚀
     setInterval(() => {
         const busquedaActiva = elements.buscador.value.trim() !== '';
-        // Carga silenciosa cada 4 segundos solo si no estamos buscando activamente y estamos en la primera página
         if (paginaActual === 1 && !busquedaActiva) {
             cargarModulos(1, '', true); 
         }
