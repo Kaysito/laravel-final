@@ -66,7 +66,9 @@ class UsuarioController extends Controller
     // =========================================================
     // 💾 GUARDAR / ACTUALIZAR
     // =========================================================
-    public function store(Request $request)
+    
+    // 🛠️ CORRECCIÓN: Se cambió de 'store' a 'guardar' para que coincida con la ruta y el fetch de JS
+    public function guardar(Request $request)
     {
         $request->validate([
             'strNombreUsuario' => 'required|string|max:70|regex:/^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]+$/|unique:usuarios,strNombreUsuario',
@@ -79,8 +81,13 @@ class UsuarioController extends Controller
 
         $datos = $request->all();
         $pwdPlana = $request->strPwd; 
+        
+        // Encriptar contraseña
         $datos['strPwd'] = Hash::make($pwdPlana);
-        $datos['idEstadoUsuario'] = 0; 
+        
+        // 🛠️ CORRECCIÓN LÓGICA: Respetamos lo que el admin eligió en el switch (Activo 1 o Inactivo 0)
+        $datos['idEstadoUsuario'] = $request->input('idEstadoUsuario', 0); 
+        
         $datos['codigo_correo'] = str_pad(mt_rand(0, 999999), 6, '0', STR_PAD_LEFT);
 
         $usuario = Usuario::create($datos);
