@@ -44,7 +44,7 @@
 <div class="h-full w-full overflow-y-auto p-4 sm:p-6 fade-in relative">
     <div class="max-w-4xl mx-auto pb-12">
 
-        {{-- Header Consistente --}}
+        {{-- Header Consistente --}} 
         <div class="flex items-center gap-4 mb-8">
             <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--neon)] to-[var(--neon-dark)] flex items-center justify-center shadow-lg text-white">
                 <i class="fas fa-hammer text-xl"></i>
@@ -57,7 +57,11 @@
 
         <form id="formNuevoModulo" action="javascript:void(0);">
             
+<<<<<<< HEAD
             {{-- BLOQUE 1: IDENTIDAD --}}
+=======
+            {{-- BLOQUE 1: INFORMACIÓN DEL MÓDULO --}} 
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
             <div class="stacked-block">
                 <div class="block-header">
                     <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)] border border-[var(--surface-4)]">
@@ -76,13 +80,21 @@
                     <div class="mt-4 bg-[var(--surface-1)] p-3 rounded-lg border border-blue-500/20 flex items-start gap-3 shadow-inner">
                         <i class="fas fa-robot text-blue-400 mt-0.5"></i>
                         <p class="text-[10px] text-[var(--text-3)] leading-relaxed">
+<<<<<<< HEAD
                             Al registrar, se crearán automáticamente los permisos de <strong>Consulta, Agregar, Editar, Eliminar y Detalle</strong> para este módulo en todos los perfiles existentes.
+=======
+                            Al guardar, el sistema inyectará este módulo automáticamente en la <strong>Matriz de Permisos</strong>. Por seguridad, todos los perfiles iniciarán con acceso denegado (excepto Admin).
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
                         </p>
                     </div>
                 </div>
             </div>
 
+<<<<<<< HEAD
             {{-- BLOQUE 2: UBICACIÓN Y APARIENCIA --}}
+=======
+            {{-- BLOQUE 2: CONFIGURACIÓN VISUAL (MENÚ DINÁMICO) --}} 
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
             <div class="stacked-block">
                 <div class="block-header">
                     <div class="w-8 h-8 rounded bg-[var(--surface-3)] flex items-center justify-center text-[var(--text-3)] border border-[var(--surface-4)]">
@@ -96,7 +108,11 @@
                 
                 <div class="pl-11 grid grid-cols-1 md:grid-cols-2 gap-6">
                     
+<<<<<<< HEAD
                     {{-- Carpeta Dinámica --}}
+=======
+                    {{-- Datalist de Grupos --}} 
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
                     <div>
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase tracking-wider">Carpeta / Grupo</label>
                         <input list="listaGrupos" type="text" id="strGrupo" maxlength="100" placeholder="Escribe o selecciona..." class="input-premium" autocomplete="off">
@@ -111,7 +127,11 @@
                         <p class="text-[10px] text-[var(--text-3)] mt-1.5 italic">Si se deja vacío, aparecerá en la raíz del Sidebar.</p>
                     </div>
 
+<<<<<<< HEAD
                     {{-- Icono con Preview --}}
+=======
+                    {{-- Icono con Preview Live --}} 
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
                     <div>
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase tracking-wider">Icono (FontAwesome)</label>
                         <div class="relative">
@@ -121,22 +141,36 @@
                         <p class="text-[10px] text-[var(--text-3)] mt-1.5">Ej: <code>fas fa-user-gear</code></p>
                     </div>
 
+<<<<<<< HEAD
                     {{-- Ruta Técnica --}}
+=======
+                    {{-- Ruta --}} 
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
                     <div class="md:col-span-2">
                         <label class="block text-[11px] font-bold text-[var(--text-2)] mb-1.5 uppercase tracking-wider">Nombre de la Ruta (Laravel Route)</label>
                         <div class="relative">
                             <i class="fas fa-link absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs"></i>
                             <input type="text" id="strRuta" maxlength="100" placeholder="Ej. ventas.index" class="input-premium pl-9 font-mono text-xs text-blue-500" autocomplete="off">
                         </div>
+<<<<<<< HEAD
                         <p class="text-[10px] text-[var(--text-3)] mt-2 leading-relaxed">
                             <i class="fas fa-circle-exclamation mr-1 text-yellow-500"></i> 
                             Si la ruta no existe en <code>web.php</code>, el sistema activará automáticamente la <strong>Vista de Relleno (Modo Construcción)</strong>.
+=======
+                        <p class="text-[10px] text-[var(--text-3)] mt-1.5 leading-relaxed">
+                            <i class="fas fa-wand-magic-sparkles mr-1 text-[var(--neon)] opacity-70"></i> 
+                            Si lo dejas en blanco, el sistema le asignará la <strong>Vista Genérica de Construcción</strong> automáticamente.
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
                         </p>
                     </div>
                 </div>
             </div>
 
+<<<<<<< HEAD
             {{-- Footer --}}
+=======
+            {{-- Footer de Acciones --}} 
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
             <div class="flex items-center justify-between border-t border-[var(--surface-4)] pt-6 mt-4">
                 <a href="{{ route('modulo.index') }}" class="text-xs font-bold text-[var(--text-3)] hover:text-[var(--text-1)] transition-colors">
                     <i class="fas fa-arrow-left mr-1"></i> Cancelar
@@ -162,7 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Live Preview
     inputIcono.addEventListener('input', (e) => {
         const val = e.target.value.trim();
+<<<<<<< HEAD
         iconPreview.className = val ? `${val} absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neon)] text-sm` : 'fas fa-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs';
+=======
+        iconPreview.className = val
+            ? `${val} absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neon)] text-sm transition-all duration-300`
+            : 'fas fa-icons absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-3)] text-xs transition-all duration-300';
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
     });
 
     form.addEventListener('submit', async (e) => {
@@ -182,20 +222,40 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/modulos', {
                 method: 'POST',
                 headers: { 
-                    'Content-Type': 'application/json', 
+                    'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: JSON.stringify(payload)
             });
-            
-            const data = await res.json();
+
+            // Si el backend devuelve HTML (por ejemplo 419/500), evitamos que explote el .json()
+            const contentType = res.headers.get('content-type') || '';
+            const data = contentType.includes('application/json')
+                ? await res.json()
+                : { success: false, message: await res.text() };
             
             if (res.ok && data.success) {
                 if(window.showToast) window.showToast('✅ Módulo integrado con éxito', 'success');
                 setTimeout(() => window.location.href = "{{ route('modulo.index') }}", 1000);
             } else {
+<<<<<<< HEAD
                 throw new Error(data.message || 'Error en el servidor');
+=======
+                let errorMsg = data.message || data.mensaje || 'Ocurrió un error al registrar el módulo.';
+                if (data.errors) {
+                    const primerError = Object.values(data.errors)[0][0];
+                    if ((primerError || '').includes('already been taken')) {
+                        errorMsg = 'Atención: Este nombre de módulo ya existe en la base de datos.';
+                    } else {
+                        errorMsg = primerError;
+                    }
+                } else if ((data.message || data.mensaje || '').includes('already been taken')) {
+                    errorMsg = 'Atención: Este nombre de módulo ya existe en la base de datos.';
+                }
+                throw new Error(errorMsg);
+>>>>>>> 24be1021738b8305974dc64e3947bcf5ab6122b7
             }
         } catch (err) {
             if(window.showToast) window.showToast(err.message, 'error');
