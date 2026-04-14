@@ -9,7 +9,7 @@
     <i class="fas fa-chevron-right text-[var(--surface-4)] text-[10px] mx-2"></i>
     <span class="text-[var(--text-3)]">Módulos</span>
     <i class="fas fa-chevron-right text-[var(--surface-4)] text-[10px] mx-2"></i>
-    <span class="text-[var(--text-1)] font-medium">{{ $title ?? 'Principal 1.1' }}</span>
+    <span class="text-[var(--text-1)] font-medium">{{ $title ?? 'Módulo Genérico' }}</span>
 @endsection
 
 @section('styles')
@@ -33,11 +33,16 @@
 @section('content')
 <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 fade-in">
     
-    {{-- HEADER --}}
+    {{-- HEADER DINÁMICO --}}
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-[var(--text-1)] tracking-tight">Gestión de Datos Estáticos</h1>
-            <p class="text-sm text-[var(--text-3)] mt-1">Vista de demostración con datos de relleno (Mockup).</p>
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl font-bold text-[var(--text-1)] tracking-tight">{{ $title ?? 'Módulo Genérico' }}</h1>
+                <span class="px-2 py-0.5 rounded-md bg-[var(--surface-3)] text-[var(--text-3)] text-[10px] font-mono border border-[var(--surface-4)]">
+                    Dinámico
+                </span>
+            </div>
+            <p class="text-sm text-[var(--text-3)] mt-1">Gestión de registros y permisos (Mockup).</p>
         </div>
         <button type="button" id="btnNuevoEstatico" class="btn-primary flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm flex-shrink-0 shadow-lg transition-all duration-300 hover:scale-105 cursor-default">
             <i class="fas fa-plus text-xs"></i> <span>Nuevo Elemento</span>
@@ -137,8 +142,10 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ── CONFIGURACIÓN (RBAC Visual) ──
-    const MODULO_NAME = 'Principal1.1';
+    // ── CONFIGURACIÓN (RBAC Visual CAMALEÓNICO) ──
+    // Ahora lee el título que le envía el servidor dinámicamente
+    const MODULO_NAME = "{!! $title ?? '' !!}"; 
+    
     const puedeCrear = window.tienePermiso(MODULO_NAME, 'bitAgregar');
     const puedeEliminar = window.tienePermiso(MODULO_NAME, 'bitEliminar');
     const puedeEditar = window.tienePermiso(MODULO_NAME, 'bitEditar');
@@ -165,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Generar datos Lorem Ipsum aleatorios
     const dbEstaticos = Array(20).fill().map((_, i) => ({
         id: 101 + i, 
-        nombre: `Lorem Ipsum Dolor ${i+1}`, 
+        nombre: `Registro de ${MODULO_NAME} ${i+1}`, // <-- Adaptamos el dato falso al módulo
         desc: `Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`, 
         fecha: `2025-0${Math.floor(Math.random() * 9) + 1}-1${Math.floor(Math.random() * 9)}`, 
         estado: Math.random() > 0.3 ? 1 : 0
@@ -253,14 +260,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = items[i];
             const numFila = (fromIndex || 1) + i;
             
-            // Botones visuales sin acción real
+            // Botones visuales reaccionando a la matriz
             const btnVer = puedeVer 
                 ? `<button type="button" class="action-btn view inline-flex items-center justify-center tooltip hover:bg-blue-500/10 hover:text-blue-400 cursor-default" data-tip="Ver detalle"><i class="fas fa-eye"></i></button>` 
                 : '';
 
             const btnEditar = puedeEditar 
                 ? `<button type="button" class="action-btn edit inline-flex items-center justify-center tooltip hover:bg-yellow-500/10 hover:text-yellow-500 cursor-default" data-tip="Editar"><i class="fas fa-pen"></i></button>` 
-                : `<div class="action-btn inline-flex items-center justify-center opacity-20 cursor-not-allowed tooltip" data-tip="Protegido"><i class="fas fa-lock"></i></div>`;
+                : `<div class="action-btn inline-flex items-center justify-center opacity-20 cursor-not-allowed tooltip" data-tip="Protegido por RBAC"><i class="fas fa-lock"></i></div>`;
 
             const btnEliminar = puedeEliminar 
                 ? `<button type="button" class="action-btn danger inline-flex items-center justify-center tooltip hover:bg-red-500/10 hover:text-red-500 cursor-default" data-tip="Eliminar"><i class="fas fa-trash-can"></i></button>` 
