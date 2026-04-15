@@ -59,57 +59,57 @@ Route::middleware(['jwt.verify', 'single.session'])->group(function () {
     // ── Módulo: Seguridad (Perfiles) ──
     Route::get('/perfiles', function () { return view('modules.perfil', ['title' => 'Perfiles']); })
         ->name('perfil.index')
-        ->middleware('permiso:Perfil,bitConsulta');
+        ->middleware('permiso:Perfiles,bitConsulta'); // 👈 Actualizado a plural
 
     Route::get('/perfiles/nuevo', [PerfilController::class, 'crear'])
         ->name('perfil.crear')
-        ->middleware('permiso:Perfil,bitAgregar');
+        ->middleware('permiso:Perfiles,bitAgregar');
 
     Route::get('/perfiles/{id}/editar', [PerfilController::class, 'editar'])
         ->name('perfil.editar')
-        ->middleware('permiso:Perfil,bitEditar');
+        ->middleware('permiso:Perfiles,bitEditar');
 
     Route::get('/perfiles/{id}/detalle', [PerfilController::class, 'detalle'])
         ->name('perfil.detalle')
-        ->middleware('permiso:Perfil,bitDetalle');
+        ->middleware('permiso:Perfiles,bitDetalle');
 
     Route::get('/api/perfiles', [PerfilController::class, 'listar']);
-    Route::post('/api/perfiles', [PerfilController::class, 'guardar'])->middleware('permiso:Perfil,bitAgregar');
-    Route::put('/api/perfiles/{id}', [PerfilController::class, 'actualizar'])->middleware('permiso:Perfil,bitEditar'); 
-    Route::delete('/api/perfiles/{id}', [PerfilController::class, 'eliminar'])->middleware('permiso:Perfil,bitEliminar');
+    Route::post('/api/perfiles', [PerfilController::class, 'guardar'])->middleware('permiso:Perfiles,bitAgregar');
+    Route::put('/api/perfiles/{id}', [PerfilController::class, 'actualizar'])->middleware('permiso:Perfiles,bitEditar'); 
+    Route::delete('/api/perfiles/{id}', [PerfilController::class, 'eliminar'])->middleware('permiso:Perfiles,bitEliminar');
 
 
     // ── Módulo: Módulos del Sistema ──
     Route::get('/modulos', function () { return view('modules.modulo', ['title' => 'Módulos']); })
         ->name('modulo.index')
-        ->middleware('permiso:Modulo,bitConsulta');
+        ->middleware('permiso:Modulos,bitConsulta'); // 👈 Actualizado a plural
 
     Route::get('/modulos/nuevo', [ModuloController::class, 'crear'])
         ->name('modulo.crear')
-        ->middleware('permiso:Modulo,bitAgregar');
+        ->middleware('permiso:Modulos,bitAgregar');
 
     Route::get('/modulos/{id}/editar', [ModuloController::class, 'editar'])
         ->name('modulo.editar')
-        ->middleware('permiso:Modulo,bitEditar');
+        ->middleware('permiso:Modulos,bitEditar');
 
     Route::get('/modulos/{id}/detalle', [ModuloController::class, 'detalle'])
         ->name('modulo.detalle')
-        ->middleware('permiso:Modulo,bitDetalle');
+        ->middleware('permiso:Modulos,bitDetalle');
 
     Route::get('/api/modulos', [ModuloController::class, 'listar']);
-    Route::post('/api/modulos', [ModuloController::class, 'guardar'])->middleware('permiso:Modulo,bitAgregar');
-    Route::put('/api/modulos/{id}', [ModuloController::class, 'actualizar'])->middleware('permiso:Modulo,bitEditar');
-    Route::delete('/api/modulos/{id}', [ModuloController::class, 'eliminar'])->middleware('permiso:Modulo,bitEliminar');
+    Route::post('/api/modulos', [ModuloController::class, 'guardar'])->middleware('permiso:Modulos,bitAgregar');
+    Route::put('/api/modulos/{id}', [ModuloController::class, 'actualizar'])->middleware('permiso:Modulos,bitEditar');
+    Route::delete('/api/modulos/{id}', [ModuloController::class, 'eliminar'])->middleware('permiso:Modulos,bitEliminar');
 
 
     // ── Módulo: Permisos (Matriz RBAC) ──
     Route::get('/permisos', function () { return view('modules.permisos', ['title' => 'Permisos-Perfil']); })
         ->name('permisos.index')
-        ->middleware('permiso:Permisos,bitConsulta');
+        ->middleware('permiso:Permisos-Perfil,bitConsulta'); // 👈 Actualizado al nombre exacto
 
     Route::get('/api/permisos', [PermisoPerfilController::class, 'listar']);
     Route::get('/api/permisos/catalogos', [PermisoPerfilController::class, 'catalogos']);
-    Route::post('/api/permisos', [PermisoPerfilController::class, 'guardar'])->middleware('permiso:Permisos,bitEditar');
+    Route::post('/api/permisos', [PermisoPerfilController::class, 'guardar'])->middleware('permiso:Permisos-Perfil,bitEditar');
 
 
     // ── Módulo: Usuarios ──
@@ -130,7 +130,7 @@ Route::middleware(['jwt.verify', 'single.session'])->group(function () {
         ->name('usuarios.detalle')
         ->middleware('permiso:Usuarios,bitDetalle');
 
-    // 🚀 API Acciones Usuarios (CORREGIDO: Se agregó name() a todas para evitar excepciones de Blade)
+    // API Acciones Usuarios
     Route::post('/usuarios/guardar', [UsuarioController::class, 'guardar'])
         ->name('usuarios.guardar')
         ->middleware('permiso:Usuarios,bitAgregar'); 

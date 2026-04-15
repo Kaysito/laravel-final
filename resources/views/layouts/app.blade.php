@@ -148,7 +148,6 @@
             @php
                 $menuInteligente = [];
                 if(isset($modulosMenu)) {
-                    // 1. Aplanamos la colección vieja para procesarla
                     $todosLosModulos = collect();
                     foreach($modulosMenu as $grupo => $mods) {
                         foreach($mods as $m) {
@@ -156,15 +155,12 @@
                         }
                     }
 
-                    // 2. Ordenamos todo por nombre
                     $todosLosModulos = $todosLosModulos->sortBy('strNombreModulo');
 
-                    // 3. Reagrupamos inteligentemente (Padre e Hijos juntos)
                     foreach($todosLosModulos as $m) {
                         $g = trim($m->strGrupo ?? '');
                         $n = trim($m->strNombreModulo);
                         
-                        // Es Padre si su grupo está vacío, o es igual a su nombre
                         $isPadre = ($g === '' || strtolower($g) === strtolower($n));
                         $nombreCarpeta = $isPadre ? $n : $g;
 
@@ -179,7 +175,6 @@
                         }
                     }
                     
-                    // Ordenamos las carpetas alfabéticamente
                     ksort($menuInteligente);
                 }
             @endphp
@@ -191,12 +186,10 @@
                     $hijos = $datos['hijos'];
                     $tieneHijos = count($hijos) > 0;
                     
-                    // Si el padre existe, usamos su icono, si no, una carpeta por defecto
                     $iconoCarpeta = $padre ? ($padre->strIcono ?? 'fas fa-folder') : 'fas fa-folder';
                 @endphp
 
                 @if(!$tieneHijos && $padre)
-                    {{-- CASO 1: Módulo Suelto (Es un Padre que no tiene hijos todavía) --}}
                     <a href="{{ $padre->strRuta && Route::has($padre->strRuta) ? route($padre->strRuta) : '#' }}" data-modulo="{{ $padre->strNombreModulo }}"
                        class="nav-item {{ $padre->strRuta && request()->routeIs($padre->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
                         <i class="nav-icon {{ $padre->strIcono ?? 'fas fa-cube' }} w-4 text-center"></i>
@@ -204,7 +197,6 @@
                     </a>
 
                 @elseif($tieneHijos)
-                    {{-- CASO 2: Carpeta con Hijos (Acordeón) --}}
                     @php $folderId = 'submenu-' . Str::slug($carpeta); @endphp
                     <div class="menu-group">
                         <button onclick="toggleSubmenu('{{ $folderId }}', this)" class="submenu-btn">
@@ -217,7 +209,6 @@
                         
                         <div id="{{ $folderId }}" class="submenu-content pl-9 mt-1 space-y-1">
                             
-                            {{-- Si la Carpeta "Padre" tiene una URL real asignada, creamos un sublink para ir a ella --}}
                             @if($padre && $padre->strRuta)
                                 <a href="{{ Route::has($padre->strRuta) ? route($padre->strRuta) : '#' }}" data-modulo="{{ $padre->strNombreModulo }}"
                                    class="nav-item {{ request()->routeIs($padre->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
@@ -226,7 +217,6 @@
                                 </a>
                             @endif
 
-                            {{-- Imprimimos los Hijos --}}
                             @foreach($hijos as $hijo)
                                 <a href="{{ $hijo->strRuta && Route::has($hijo->strRuta) ? route($hijo->strRuta) : '#' }}" data-modulo="{{ $hijo->strNombreModulo }}"
                                    class="nav-item {{ $hijo->strRuta && request()->routeIs($hijo->strRuta) ? 'active' : '' }} flex items-center gap-3 px-3 py-2 text-sm">
@@ -280,8 +270,10 @@
                 
                 <a href="{{ route('miperfil') ?? '#' }}" class="flex items-center gap-2 cursor-pointer tooltip transition-transform hover:scale-105" data-tip="Mi Perfil">
                     @php $currentUser = auth()->user(); @endphp
-                    @if($currentUser && $currentUser->strImagen)
-                        <img src="{{ $currentUser->strImagen }}-/scale_crop/60x60/center/" class="w-8 h-8 rounded-full object-cover shadow-md border border-[var(--surface-4)]">
+                    
+                    {{-- 🟢 FIX ANTI-404: Validación más estricta de la imagen --}}
+                    @if($currentUser && !empty($currentUser->strImagen) && $currentUser->strImagen !== 'null')
+                        <img src="{{ $currentUser->strImagen }}-/scale_crop/60x60/center/" onerror="this.style.display='none';" class="w-8 h-8 rounded-full object-cover shadow-md border border-[var(--surface-4)]">
                     @else
                         <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-[10px] font-bold text-white shadow-md border border-[var(--surface-4)]">
                             {{ $currentUser ? strtoupper(substr($currentUser->strNombreUsuario ?? 'A', 0, 2)) : 'AD' }}
@@ -348,15 +340,24 @@
             }
         }
 
-        // 1. CEREBRO DE PERMISOS (RBAC)
+        // ========================================================================
+        // 🛡️ 1. CEREBRO DE PERMISOS (RBAC) 
+        // ========================================================================
         window.tienePermiso = function(nombreModulo, accionCrud) {
             try {
                 const userData = JSON.parse(localStorage.getItem('user_data'));
                 if (!userData) return false; 
                 if (userData.perfil === 1) return true; // Super Admin bypass
 
-                if (userData.permisos && userData.permisos[nombreModulo]) {
-                    return userData.permisos[nombreModulo][accionCrud] == 1;
+                if (userData.permisos) {
+                    const normalizar = (str) => str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() : '';
+                    const target = normalizar(nombreModulo);
+
+                    for (const [key, permisosDB] of Object.entries(userData.permisos)) {
+                        if (normalizar(key) === target) {
+                            return permisosDB[accionCrud] == 1;
+                        }
+                    }
                 }
                 return false;
             } catch (e) { return false; }
@@ -366,11 +367,7 @@
         window.aplicarPermisosVisuales = function() {
             document.querySelectorAll('#sidebarNav [data-modulo]').forEach(enlace => {
                 const modulo = enlace.getAttribute('data-modulo');
-                if (!window.tienePermiso(modulo, 'bitConsulta')) {
-                    enlace.style.display = 'none';
-                } else {
-                    enlace.style.display = 'flex'; 
-                }
+                enlace.style.display = window.tienePermiso(modulo, 'bitConsulta') ? 'flex' : 'none';
             });
 
             document.querySelectorAll('.menu-group').forEach(group => {
@@ -378,20 +375,16 @@
                 if(submenuContent) {
                     const links = Array.from(submenuContent.querySelectorAll('[data-modulo]'));
                     const hasVisibleLinks = links.some(link => link.style.display !== 'none');
-                    
-                    if(!hasVisibleLinks) {
-                        group.style.display = 'none';
-                    } else {
-                        group.style.display = 'block';
-                    }
+                    group.style.display = hasVisibleLinks ? 'block' : 'none';
                 }
             });
         };
 
-        // 🟢 NUEVO: REFRESCO EN VIVO DEL SIDEBAR 🟢
+        // REFRESCO EN VIVO DEL SIDEBAR
         window.refrescarSidebarEnVivo = async function() {
             try {
                 const res = await fetch(window.location.href);
+                if (!res.ok) return;
                 const text = await res.text();
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(text, 'text/html');
@@ -402,7 +395,7 @@
                     window.aplicarPermisosVisuales();
                     autoOpenActiveMenu();
                 }
-            } catch(e) { console.error("Fallo al actualizar el Sidebar", e); }
+            } catch(e) { /* Silencio para no saturar consola */ }
         };
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -410,32 +403,33 @@
             autoOpenActiveMenu(); 
         });
 
-        // 3. 🚀 MOTOR GLOBAL DE PERMISOS Y ACTUALIZACIONES EN TIEMPO REAL 🚀
+        // ========================================================================
+        // 🚀 3. MOTOR GLOBAL DE PERMISOS (EVENT-DRIVEN: CERO SPAM DE RED)
+        // ========================================================================
         let _cacheModulosHash = null;
 
-        setInterval(async () => {
+        window.sincronizarPermisos = async function() {
             try {
                 const userDataStr = localStorage.getItem('user_data');
                 if (!userDataStr) return;
                 
                 let userData = JSON.parse(userDataStr);
 
-                // ── Módulo Auto-Refresh (Aplica para todos, incluyendo Super Admin) ──
+                // Catalogos Auto-Refresh
                 const resCat = await fetch('/api/permisos/catalogos', { headers: { 'Accept': 'application/json' }});
                 if (!resCat.ok) return;
                 const dataCat = await resCat.json();
                 const modulos = dataCat.modulos || [];
 
-                // Detectamos si hubo un cambio estructural (Módulo nuevo, borrado, editado)
                 const currentHash = JSON.stringify(modulos);
                 if (_cacheModulosHash !== null && _cacheModulosHash !== currentHash) {
-                    window.refrescarSidebarEnVivo(); // Si cambió, actualizamos el DOM en silencio
+                    window.refrescarSidebarEnVivo();
                 }
                 _cacheModulosHash = currentHash;
 
-                // ── Validación de Permisos (Ignorar si es Super Admin) ──
                 if (userData.perfil === 1) return; 
 
+                // Descargar permisos del Rol
                 const resPerm = await fetch(`/api/permisos?perfil=${userData.perfil}`, { headers: { 'Accept': 'application/json' }});
                 if (!resPerm.ok) return;
                 const dataPerm = await resPerm.json();
@@ -471,9 +465,24 @@
                     }
                 }
             } catch (e) {
-                // Fallo silencioso
+                // Falla en silencio si el API no responde para no molestar
             }
-        }, 5000);
+        };
+
+        // 🟢 MAGIA DE RENDIMIENTO: Sincroniza al cargar, y SOLO cuando el usuario regresa a la pestaña.
+        window.sincronizarPermisos().then(() => {
+            window.aplicarPermisosVisuales();
+        });
+        
+        // Eventos nativos del navegador para actualizar sin saturar el servidor
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                window.sincronizarPermisos();
+            }
+        });
+        window.addEventListener('focus', () => {
+            window.sincronizarPermisos();
+        });
 
         // 4. LÓGICA DEL TOAST
         let _toastTimer;

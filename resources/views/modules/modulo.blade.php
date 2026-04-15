@@ -154,10 +154,11 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-    const puedeCrear = window.tienePermiso('Modulo', 'bitAgregar');
-    const puedeEditar = window.tienePermiso('Modulo', 'bitEditar');
-    const puedeEliminar = window.tienePermiso('Modulo', 'bitEliminar');
-    const puedeDetalle = window.tienePermiso('Modulo', 'bitDetalle');
+    const nombreEnBD = 'Modulos'; 
+    const puedeCrear = window.tienePermiso(nombreEnBD, 'bitAgregar');
+    const puedeEditar = window.tienePermiso(nombreEnBD, 'bitEditar');
+    const puedeEliminar = window.tienePermiso(nombreEnBD, 'bitEliminar');
+    const puedeDetalle = window.tienePermiso(nombreEnBD, 'bitDetalle');
 
     const elements = {
         btnNuevo: document.getElementById('btnNuevoModulo'),
@@ -180,9 +181,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let idEliminar = null;
     let timeoutBusqueda;
     let paginaActual = 1;
+    // Limitamos la caché a 20 entradas para evitar fugas de memoria si navegan mucho
     const localCache = new Map(); 
 
-    const skeletonHTML = Array(5).fill().map(() => `
+    const skeletonHTML = Array(5).fill(`
         <tr>
             <td class="py-4 px-4"><div class="skeleton h-4 w-4 rounded"></div></td>
             <td class="py-4 px-6"><div class="flex items-center gap-3"><div class="skeleton w-8 h-8 rounded-lg"></div><div class="skeleton h-4 w-48 rounded"></div></div></td>
@@ -214,11 +216,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const datosCambiaron = JSON.stringify(cacheActual?.data) !== JSON.stringify(data.data);
 
             if (datosCambiaron || !silencioso) {
+                // Control de tamaño de caché (FIFO)
+                if (localCache.size > 20) {
+                    const firstKey = localCache.keys().next().value;
+                    localCache.delete(firstKey);
+                }
                 localCache.set(cacheKey, data);
-                renderFull(data);
+                
+                // Usamos requestAnimationFrame para pintar sin congelar la UI
+                requestAnimationFrame(() => renderFull(data));
             }
         } catch (err) { 
-            console.error(err); 
+            console.error('Error al cargar módulos:', err); 
         }
     };
 
@@ -226,12 +235,12 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTabla(data.data || []);
         renderPaginacion(data);
         
-        elements.statTotal.textContent = data.total || 0;
-        elements.tableCount.textContent = `${data.total || 0} PADRES`;
+        const total = data.total || 0;
+        elements.statTotal.textContent = total;
+        elements.tableCount.textContent = `${total} PADRES`;
         elements.btnLimpiar.style.display = elements.buscador.value.length > 0 ? 'block' : 'none';
     };
 
-    // 🚀 LÓGICA DE ACORDEÓN (PADRE E HIJOS) REPARADA 🚀
     const renderTabla = (modulos) => {
         if (modulos.length === 0) {
             elements.tablaBody.innerHTML = '';
@@ -239,54 +248,49 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.pagWrapper.classList.add('hidden');
             return;
         }
+        
         elements.emptyState.classList.add('hidden');
         elements.pagWrapper.classList.remove('hidden');
 
-        // 1. Agrupar la data actual de forma inteligente
-        const grupos = {};
+        // Optimización: Uso de Map es más rápido para iteraciones dinámicas que un objeto {}
+        const grupos = new Map();
         
-        modulos.forEach(m => {
-            // Un módulo es "Padre" SI y SÓLO SI:
-            // 1. Su strGrupo está vacío (null o "")
-            // 2. O su strGrupo es exactamente igual a su strNombreModulo
-            const isPadre = !m.strGrupo || m.strGrupo.trim() === '' || m.strGrupo.trim().toLowerCase() === m.strNombreModulo.trim().toLowerCase();
+        for (let i = 0; i < modulos.length; i++) {
+            const m = modulos[i];
+            const strNombre = m.strNombreModulo.trim();
+            const strGrupo = m.strGrupo ? m.strGrupo.trim() : '';
             
-            // El nombre de la "Carpeta" donde debe ir:
-            const grupoName = isPadre ? m.strNombreModulo.trim() : m.strGrupo.trim();
+            const isPadre = !strGrupo || strGrupo.toLowerCase() === strNombre.toLowerCase();
+            const grupoName = isPadre ? strNombre : strGrupo;
 
-            if (!grupos[grupoName]) {
-                grupos[grupoName] = { parent: null, children: [] };
+            if (!grupos.has(grupoName)) {
+                grupos.set(grupoName, { parent: null, children: [] });
             }
 
             if (isPadre) {
-                // Si encontramos al Padre real de esta familia, lo asignamos.
-                grupos[grupoName].parent = m;
+                grupos.get(grupoName).parent = m;
             } else {
-                // Si no es padre, forzosamente es un hijo que va dentro de esa carpeta.
-                grupos[grupoName].children.push(m);
+                grupos.get(grupoName).children.push(m);
             }
-        });
+        }
 
-        // 2. Generar HTML
-        let html = '';
-        Object.keys(grupos).forEach(grupoName => {
-            const group = grupos[grupoName];
+        // Optimización: Array.join('') es más rápido que la concatenación (+=) de strings largos
+        const htmlRows = [];
+        let groupIndex = 0; // Índice numérico en lugar de Regex costoso
+
+        grupos.forEach((group, grupoName) => {
             const hasParent = group.parent !== null;
-            
-            // Si no nos llegó el objeto Padre desde la DB (por la paginación), creamos uno "Virtual"
-            const parentModulo = group.parent || { id: '-', strNombreModulo: grupoName, strIcono: 'fas fa-folder-open' };
-            const groupId = `grp-${grupoName.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            const parentModulo = group.parent || { id: `virt-${groupIndex}`, strNombreModulo: grupoName, strIcono: 'fas fa-folder-open' };
+            const groupId = `grp-${groupIndex++}`; // ID ultra ligero
 
-            // Botones de Acción para el Padre (Solo si es un registro real de la BD)
             let btnVerP = '', btnEditarP = '', btnEliminarP = '';
             if (hasParent) {
-                btnVerP = puedeDetalle ? `<a href="/modulos/${parentModulo.id}/detalle" class="action-btn view tooltip hover:text-blue-400" data-tip="Ver"><i class="fas fa-eye text-xs"></i></a>` : '';
-                btnEditarP = puedeEditar ? `<a href="/modulos/${parentModulo.id}/editar" class="action-btn edit tooltip hover:text-yellow-500" data-tip="Editar"><i class="fas fa-pen text-xs"></i></a>` : '';
-                btnEliminarP = puedeEliminar ? `<button data-action="delete" data-id="${parentModulo.id}" data-name="${parentModulo.strNombreModulo}" class="action-btn danger tooltip hover:text-red-500" data-tip="Eliminar"><i class="fas fa-trash-can text-xs"></i></button>` : '';
+                if (puedeDetalle) btnVerP = `<a href="/modulos/${parentModulo.id}/detalle" class="action-btn view tooltip hover:text-blue-400" data-tip="Ver"><i class="fas fa-eye text-xs"></i></a>`;
+                if (puedeEditar) btnEditarP = `<a href="/modulos/${parentModulo.id}/editar" class="action-btn edit tooltip hover:text-yellow-500" data-tip="Editar"><i class="fas fa-pen text-xs"></i></a>`;
+                if (puedeEliminar) btnEliminarP = `<button data-action="delete" data-id="${parentModulo.id}" data-name="${parentModulo.strNombreModulo}" class="action-btn danger tooltip hover:text-red-500" data-tip="Eliminar"><i class="fas fa-trash-can text-xs"></i></button>`;
             }
 
-            // DIBUJAR FILA PADRE
-            html += `
+            htmlRows.push(`
             <tr class="module-row cursor-pointer bg-[var(--surface-1)] hover:bg-[var(--surface-2)]" data-toggle="${groupId}">
                 <td class="py-4 px-4 w-10 text-center select-none">
                     ${group.children.length > 0 ? `<i class="fas fa-chevron-right text-[var(--text-3)] transition-transform duration-200" id="icon-${groupId}"></i>` : '<i class="fas fa-minus text-[var(--surface-4)] text-[10px]"></i>'}
@@ -303,15 +307,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="py-4 px-6 text-right">
                     <div class="flex items-center justify-end gap-2">${btnVerP} ${btnEditarP} ${btnEliminarP}</div>
                 </td>
-            </tr>`;
+            </tr>`);
 
-            // DIBUJAR FILAS HIJOS
-            group.children.forEach(child => {
+            for (let j = 0; j < group.children.length; j++) {
+                const child = group.children[j];
                 const btnVerC = puedeDetalle ? `<a href="/modulos/${child.id}/detalle" class="action-btn view tooltip hover:text-blue-400" data-tip="Ver"><i class="fas fa-eye text-xs"></i></a>` : '';
                 const btnEditarC = puedeEditar ? `<a href="/modulos/${child.id}/editar" class="action-btn edit tooltip hover:text-yellow-500" data-tip="Editar"><i class="fas fa-pen text-xs"></i></a>` : '';
                 const btnEliminarC = puedeEliminar ? `<button data-action="delete" data-id="${child.id}" data-name="${child.strNombreModulo}" class="action-btn danger tooltip hover:text-red-500" data-tip="Eliminar"><i class="fas fa-trash-can text-xs"></i></button>` : '';
 
-                html += `
+                htmlRows.push(`
                 <tr class="child-row hidden child-${groupId} bg-[var(--surface-2)]">
                     <td class="py-3 px-4"></td>
                     <td class="py-3 px-6 pl-12">
@@ -323,43 +327,47 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td class="py-3 px-6 text-right">
                         <div class="flex items-center justify-end gap-2">${btnVerC} ${btnEditarC} ${btnEliminarC}</div>
                     </td>
-                </tr>`;
-            });
+                </tr>`);
+            }
         });
         
-        elements.tablaBody.innerHTML = html;
+        elements.tablaBody.innerHTML = htmlRows.join('');
     };
 
     // ── Lógica de Eventos ──
     elements.tablaBody.addEventListener('click', (e) => {
-        const toggleRow = e.target.closest('tr[data-toggle]');
-        if (toggleRow && !e.target.closest('button') && !e.target.closest('a')) {
+        const target = e.target;
+        
+        // Optimización: Unir selectores para ignorar clicks en botones o enlaces rápidamente
+        if (target.closest('button, a')) {
+            const btnDelete = target.closest('button[data-action="delete"]');
+            if (btnDelete) {
+                const { id, name } = btnDelete.dataset;
+                idEliminar = id;
+                document.getElementById('nombreEliminar').textContent = name;
+                elements.modalEliminar.classList.add('open');
+                setTimeout(() => elements.eliminarContent.classList.remove('scale-95', 'opacity-0'), 10);
+            }
+            return; // Salir rápido
+        }
+
+        const toggleRow = target.closest('tr[data-toggle]');
+        if (toggleRow) {
             const groupId = toggleRow.dataset.toggle;
-            const children = document.querySelectorAll(`.child-${groupId}`);
+            // Buscar solo dentro de tablaBody es más rápido que buscar en todo el document
+            const children = elements.tablaBody.querySelectorAll(`.child-${groupId}`); 
             const icon = document.getElementById(`icon-${groupId}`);
 
             if (children.length > 0) {
                 const isHidden = children[0].classList.contains('hidden');
-                children.forEach(child => {
-                    if (isHidden) {
-                        child.classList.remove('hidden');
-                        child.classList.add('table-row');
-                    } else {
-                        child.classList.add('hidden');
-                        child.classList.remove('table-row');
-                    }
-                });
+                
+                // Optimización: classList.toggle es más directo
+                for (let k = 0; k < children.length; k++) {
+                    children[k].classList.toggle('hidden', !isHidden);
+                    children[k].classList.toggle('table-row', isHidden);
+                }
                 if (icon) icon.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
             }
-        }
-
-        const btnDelete = e.target.closest('button[data-action="delete"]');
-        if (btnDelete) {
-            const { id, name } = btnDelete.dataset;
-            idEliminar = id;
-            document.getElementById('nombreEliminar').textContent = name;
-            elements.modalEliminar.classList.add('open');
-            setTimeout(() => elements.eliminarContent.classList.remove('scale-95', 'opacity-0'), 10);
         }
     });
 
@@ -372,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const current = data.current_page;
         const last = data.last_page;
+        const frag = document.createDocumentFragment(); // Evita repintados múltiples
 
         const createBtn = (icon, page, disabled) => {
             const btn = document.createElement('button');
@@ -382,10 +391,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return btn;
         };
 
-        elements.pagBotones.appendChild(createBtn('fas fa-angles-left', 1, current === 1));
-        elements.pagBotones.appendChild(createBtn('fas fa-angle-left', current - 1, current === 1));
-        elements.pagBotones.appendChild(createBtn('fas fa-angle-right', current + 1, current === last));
-        elements.pagBotones.appendChild(createBtn('fas fa-angles-right', last, current === last));
+        frag.appendChild(createBtn('fas fa-angles-left', 1, current === 1));
+        frag.appendChild(createBtn('fas fa-angle-left', current - 1, current === 1));
+        frag.appendChild(createBtn('fas fa-angle-right', current + 1, current === last));
+        frag.appendChild(createBtn('fas fa-angles-right', last, current === last));
+        
+        elements.pagBotones.appendChild(frag);
     };
 
     document.getElementById('btnConfirmarEliminar').onclick = async () => {
@@ -401,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarModulos();
                 if(window.showToast) window.showToast('Módulo eliminado', 'success');
             }
-        } catch (err) { console.error(err); }
+        } catch (err) { console.error('Error al eliminar:', err); }
     };
 
     document.getElementById('btnCancelarEliminar').onclick = () => {
@@ -413,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.buscador.oninput = (e) => {
         clearTimeout(timeoutBusqueda);
         elements.btnLimpiar.style.display = e.target.value.length > 0 ? 'block' : 'none';
-        timeoutBusqueda = setTimeout(() => cargarModulos(1), 350);
+        timeoutBusqueda = setTimeout(() => cargarModulos(1), 300); // 300ms es un poco más responsivo que 350ms
     };
 
     elements.btnLimpiar.onclick = () => {
@@ -425,7 +436,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     cargarModulos();
 
+    // Optimización: API de visibilidad. 
+    // No gasta recursos, servidor, ni batería si el usuario está en otra pestaña de Chrome.
     setInterval(() => {
+        if (document.hidden) return; 
+
         const busquedaActiva = elements.buscador.value.trim() !== '';
         if (paginaActual === 1 && !busquedaActiva) {
             cargarModulos(1, '', true); 
