@@ -43,7 +43,7 @@ Route::middleware(['jwt.verify', 'single.session'])->group(function () {
         return view('home', $data); 
     })->name('home');
 
-    // 👤 Mi Perfil (Usuario Autenticado) - RESTAURADO A SU FORMA ORIGINAL
+    // 👤 Mi Perfil (Usuario Autenticado)
     Route::get('/mi-perfil', [UsuarioController::class, 'miPerfil'])->name('miperfil');
     Route::put('/mi-perfil/guardar', [UsuarioController::class, 'actualizarMiPerfil'])->name('miperfil.guardar');
     
@@ -130,11 +130,22 @@ Route::middleware(['jwt.verify', 'single.session'])->group(function () {
         ->name('usuarios.detalle')
         ->middleware('permiso:Usuarios,bitDetalle');
 
-    // API Acciones Usuarios
-    Route::post('/usuarios/guardar', [UsuarioController::class, 'store'])->middleware('permiso:Usuarios,bitAgregar'); 
-    Route::put('/usuarios/{id}/actualizar', [UsuarioController::class, 'actualizarDesdeDetalle'])->middleware('permiso:Usuarios,bitEditar');
-    Route::delete('/api/usuarios/{id}', [UsuarioController::class, 'eliminar'])->middleware('permiso:Usuarios,bitEliminar');
-    Route::get('/api/usuarios', [UsuarioController::class, 'listar'])->middleware('permiso:Usuarios,bitConsulta');
+    // 🚀 API Acciones Usuarios (CORREGIDO: Se agregó name() a todas para evitar excepciones de Blade)
+    Route::post('/usuarios/guardar', [UsuarioController::class, 'guardar'])
+        ->name('usuarios.guardar')
+        ->middleware('permiso:Usuarios,bitAgregar'); 
+        
+    Route::put('/usuarios/{id}/actualizar', [UsuarioController::class, 'actualizarDesdeDetalle'])
+        ->name('usuarios.actualizar')
+        ->middleware('permiso:Usuarios,bitEditar');
+        
+    Route::delete('/api/usuarios/{id}', [UsuarioController::class, 'eliminar'])
+        ->name('usuarios.eliminar')
+        ->middleware('permiso:Usuarios,bitEliminar');
+        
+    Route::get('/api/usuarios', [UsuarioController::class, 'listar'])
+        ->name('usuarios.lista')
+        ->middleware('permiso:Usuarios,bitConsulta');
 
 
     // ── Menú: Vistas Genéricas / Blank ──
