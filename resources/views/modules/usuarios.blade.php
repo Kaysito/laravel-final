@@ -195,14 +195,13 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 🚀 CORRECCIÓN: Nombre exacto de la base de datos
     const nombreEnBD = 'Usuarios'; 
 
     // ── RBAC ──
     const puedeCrear    = window.tienePermiso(nombreEnBD, 'bitAgregar');
     const puedeEliminar = window.tienePermiso(nombreEnBD, 'bitEliminar');
     const puedeEditar   = window.tienePermiso(nombreEnBD, 'bitEditar');
-    const puedeDetalle  = window.tienePermiso(nombreEnBD, 'bitDetalle'); // 🚀 Agregado
+    const puedeDetalle  = window.tienePermiso(nombreEnBD, 'bitDetalle');
 
     const el = {
         btnNuevo:       document.getElementById('btnNuevoUsuario'),
@@ -276,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const datosCambiaron = JSON.stringify(localCache.get(cacheKey)?.data) !== JSON.stringify(data.data);
             if (datosCambiaron || !silencioso) {
-                // Prevenir fugas de memoria limitando la caché a 20 entradas
                 if (localCache.size > 20) {
                     localCache.delete(localCache.keys().next().value);
                 }
@@ -345,16 +343,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<img src="${u.strImagen}-/scale_crop/80x80/center/" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-[var(--surface-4)] flex-shrink-0" loading="lazy" alt="${initials}">`
                 : `<div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[var(--neon)] to-[var(--neon-dark)] flex items-center justify-center text-xs font-bold text-white shadow-sm flex-shrink-0">${initials}</div>`;
 
-            // 🚀 CORRECCIÓN: Renderizado condicional de los 3 botones basado en permisos
             let btnVer = '', btnEditar = '', btnEliminar = '';
 
             if (puedeDetalle) {
                 btnVer = `<a href="/usuarios/${u.id}/detalle" class="action-btn view tooltip hover:bg-blue-500/10 hover:text-blue-400" data-tip="Ver detalle" aria-label="Ver detalle"><i class="fas fa-eye"></i></a>`;
             }
 
-            if (esAdmin) {
-                btnEditar = `<div class="action-btn opacity-20 cursor-not-allowed tooltip" data-tip="Protegido" aria-label="Protegido"><i class="fas fa-user-shield"></i></div>`;
-            } else {
+            // Si no es el administrador Root (ID 1), evaluamos si tiene permisos para editar/eliminar.
+            // Si es administrador Root, las variables btnEditar y btnEliminar quedan vacías.
+            if (!esAdmin) {
                 if (puedeEditar) {
                     btnEditar = `<a href="/usuarios/${u.id}/editar" class="action-btn edit tooltip hover:bg-yellow-500/10 hover:text-yellow-500" data-tip="Editar" aria-label="Editar usuario"><i class="fas fa-user-pen"></i></a>`;
                 }

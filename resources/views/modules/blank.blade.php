@@ -142,7 +142,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 🚀 PREVENCIÓN DE ERRORES: Usamos @json para escapar comillas simples/dobles y evitar que se rompa el JS
+    // 🚀 PREVENCIÓN DE ERRORES: Usamos json para escapar comillas simples/dobles y evitar que se rompa el JS
     const MODULO_NAME = @json($title ?? ''); 
     
     const puedeCrear    = window.tienePermiso(MODULO_NAME, 'bitAgregar');
@@ -276,8 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (puedeEditar) {
                 btnEditar = `<button type="button" class="action-btn edit inline-flex items-center justify-center tooltip hover:bg-yellow-500/10 hover:text-yellow-500 cursor-default" data-tip="Editar"><i class="fas fa-pen"></i></button>`;
-            } else {
-                btnEditar = `<div class="action-btn inline-flex items-center justify-center opacity-20 cursor-not-allowed tooltip" data-tip="Protegido por RBAC"><i class="fas fa-lock"></i></div>`;
             }
 
             if (puedeEliminar) {
