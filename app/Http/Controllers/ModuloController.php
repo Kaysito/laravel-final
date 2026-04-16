@@ -158,6 +158,7 @@ class ModuloController extends Controller
         $modulo = Modulo::findOrFail($id);
         $grupos = $this->obtenerCarpetas();
 
+        // ⚠️ Si te da error de View not found al editar, cambia 'emodulos' por 'emodulo'
         return view('modules.vistasmodulos.emodulos', [
             'title' => 'Editar Módulo',
             'modulo' => $modulo,
@@ -214,7 +215,8 @@ class ModuloController extends Controller
             )
             ->get();
 
-        return view('modules.vistasmodulos.dmodulos', [
+        // 🚀 CORRECCIÓN APLICADA AQUÍ: dmodulos -> dmodulo
+        return view('modules.vistasmodulos.dmodulo', [
             'modulo' => $modulo,
             'permisosReales' => $permisosRelacionados
         ]);
