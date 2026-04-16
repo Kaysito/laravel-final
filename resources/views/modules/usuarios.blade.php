@@ -195,10 +195,14 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
+    // 🚀 CORRECCIÓN: Nombre exacto de la base de datos
+    const nombreEnBD = 'Usuarios'; 
+
     // ── RBAC ──
-    const puedeCrear    = window.tienePermiso('Usuarios', 'bitAgregar');
-    const puedeEliminar = window.tienePermiso('Usuarios', 'bitEliminar');
-    const puedeEditar   = window.tienePermiso('Usuarios', 'bitEditar');
+    const puedeCrear    = window.tienePermiso(nombreEnBD, 'bitAgregar');
+    const puedeEliminar = window.tienePermiso(nombreEnBD, 'bitEliminar');
+    const puedeEditar   = window.tienePermiso(nombreEnBD, 'bitEditar');
+    const puedeDetalle  = window.tienePermiso(nombreEnBD, 'bitDetalle'); // 🚀 Agregado
 
     const el = {
         btnNuevo:       document.getElementById('btnNuevoUsuario'),
@@ -236,10 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td class="py-3 px-4 sm:py-4 sm:px-6">
                 <div class="flex items-center gap-3">
                     <div class="skeleton w-9 h-9 sm:w-10 sm:h-10 rounded-full flex-shrink-0"></div>
-                    <div>
-                        <div class="skeleton h-4 w-28 sm:w-32 rounded mb-1"></div>
-                        <div class="skeleton h-3 w-20 sm:w-24 rounded"></div>
-                    </div>
+                    <div class="skeleton h-4 w-28 sm:w-32 rounded"></div>
                 </div>
             </td>
             <td class="col-contacto py-3 px-4 sm:py-4 sm:px-6"><div class="skeleton h-4 w-28 rounded"></div></td>
@@ -275,8 +276,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const datosCambiaron = JSON.stringify(localCache.get(cacheKey)?.data) !== JSON.stringify(data.data);
             if (datosCambiaron || !silencioso) {
+                // Prevenir fugas de memoria limitando la caché a 20 entradas
+                if (localCache.size > 20) {
+                    localCache.delete(localCache.keys().next().value);
+                }
                 localCache.set(cacheKey, data);
-                renderFull(data);
+                
+                requestAnimationFrame(() => renderFull(data));
             }
         } catch (err) {
             console.error('Error cargando usuarios:', err);
@@ -289,18 +295,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderFull = (data) => {
-        renderTabla(data.data, data.from);
+        renderTabla(data.data || [], data.from);
         renderPaginacion(data);
 
-        // Stats globales: acumular sobre todos los resultados
-        // Solo actualizamos si es la primera página y sin búsqueda activa
         const busqueda = el.buscador.value.trim();
         if (paginaActual === 1 && !busqueda) {
-            // total real viene del servidor
             el.statTotal.textContent    = data.total ?? 0;
             el.tableCount.textContent   = `${data.total ?? 0} REGISTROS`;
-            // Para activos/inactivos globales, usamos meta si el servidor los envía,
-            // si no, calculamos sobre la página actual como aproximación
+            
             if (data.meta_activos !== undefined) {
                 totalActivosGlobal   = data.meta_activos;
                 totalInactivosGlobal = data.meta_inactivos ?? 0;
@@ -331,26 +333,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         el.emptyState.classList.add('hidden');
 
-        let html = '';
+        const htmlRows = [];
+        
         for (let i = 0; i < usuarios.length; i++) {
-            const u         = usuarios[i];
-            const numFila   = (fromIndex || 1) + i;
-            const esAdmin   = u.id === 1;
+            const u       = usuarios[i];
+            const numFila = (fromIndex || 1) + i;
+            const esAdmin = u.id === 1;
 
             const initials = (u.strNombreUsuario || '??').substring(0, 2).toUpperCase();
             const avatar   = u.strImagen
                 ? `<img src="${u.strImagen}-/scale_crop/80x80/center/" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border border-[var(--surface-4)] flex-shrink-0" loading="lazy" alt="${initials}">`
                 : `<div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-[var(--neon)] to-[var(--neon-dark)] flex items-center justify-center text-xs font-bold text-white shadow-sm flex-shrink-0">${initials}</div>`;
 
-            const btnEditar = (puedeEditar && !esAdmin)
-                ? `<a href="/usuarios/${u.id}/editar" class="action-btn edit tooltip hover:bg-yellow-500/10 hover:text-yellow-500" data-tip="Editar" aria-label="Editar usuario"><i class="fas fa-user-pen"></i></a>`
-                : `<div class="action-btn opacity-20 cursor-not-allowed tooltip" data-tip="Protegido" aria-label="Protegido"><i class="fas fa-user-shield"></i></div>`;
+            // 🚀 CORRECCIÓN: Renderizado condicional de los 3 botones basado en permisos
+            let btnVer = '', btnEditar = '', btnEliminar = '';
 
-            const btnEliminar = (puedeEliminar && !esAdmin)
-                ? `<button type="button" data-action="delete" data-id="${u.id}" data-name="${u.strNombreUsuario}" class="action-btn danger tooltip hover:bg-red-500/10 hover:text-red-500" data-tip="Eliminar" aria-label="Eliminar usuario"><i class="fas fa-trash-can"></i></button>`
-                : '';
+            if (puedeDetalle) {
+                btnVer = `<a href="/usuarios/${u.id}/detalle" class="action-btn view tooltip hover:bg-blue-500/10 hover:text-blue-400" data-tip="Ver detalle" aria-label="Ver detalle"><i class="fas fa-eye"></i></a>`;
+            }
 
-            html += `
+            if (esAdmin) {
+                btnEditar = `<div class="action-btn opacity-20 cursor-not-allowed tooltip" data-tip="Protegido" aria-label="Protegido"><i class="fas fa-user-shield"></i></div>`;
+            } else {
+                if (puedeEditar) {
+                    btnEditar = `<a href="/usuarios/${u.id}/editar" class="action-btn edit tooltip hover:bg-yellow-500/10 hover:text-yellow-500" data-tip="Editar" aria-label="Editar usuario"><i class="fas fa-user-pen"></i></a>`;
+                }
+                if (puedeEliminar) {
+                    btnEliminar = `<button type="button" data-action="delete" data-id="${u.id}" data-name="${u.strNombreUsuario}" class="action-btn danger tooltip hover:bg-red-500/10 hover:text-red-500" data-tip="Eliminar" aria-label="Eliminar usuario"><i class="fas fa-trash-can"></i></button>`;
+                }
+            }
+
+            htmlRows.push(`
             <tr class="user-row">
                 <td class="col-num py-3 px-4 sm:py-4 sm:px-6 text-xs text-[var(--text-3)] font-mono">${numFila}</td>
                 <td class="py-3 px-4 sm:py-4 sm:px-6">
@@ -358,9 +371,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${avatar}
                         <div class="min-w-0">
                             <p class="font-bold text-[var(--text-1)] text-sm truncate max-w-[120px] sm:max-w-none">${u.strNombreUsuario}</p>
-                            <span class="text-[10px] ${u.correo_verificado_at ? 'text-green-500' : 'text-yellow-500'} whitespace-nowrap">
-                                ${u.correo_verificado_at ? 'Verificado' : 'Sin verificar'}
-                            </span>
                         </div>
                     </div>
                 </td>
@@ -385,14 +395,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 </td>
                 <td class="py-3 px-4 sm:py-4 sm:px-6">
                     <div class="flex justify-end gap-1.5 sm:gap-2">
-                        <a href="/usuarios/${u.id}/detalle" class="action-btn view tooltip hover:bg-blue-500/10 hover:text-blue-400" data-tip="Ver detalle" aria-label="Ver detalle"><i class="fas fa-eye"></i></a>
+                        ${btnVer}
                         ${btnEditar}
                         ${btnEliminar}
                     </div>
                 </td>
-            </tr>`;
+            </tr>`);
         }
-        el.tablaBody.innerHTML = html;
+        el.tablaBody.innerHTML = htmlRows.join('');
     };
 
     const renderPaginacion = (data) => {
@@ -405,6 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const current = data.current_page;
         const last    = data.last_page;
+        const frag    = document.createDocumentFragment();
 
         const mkBtn = (icon, page, disabled, title) => {
             const btn = document.createElement('button');
@@ -417,18 +428,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return btn;
         };
 
-        el.pagBotones.appendChild(mkBtn('fas fa-angles-left',  1,           current === 1,    'Primera'));
-        el.pagBotones.appendChild(mkBtn('fas fa-angle-left',   current - 1, current === 1,    'Anterior'));
+        frag.appendChild(mkBtn('fas fa-angles-left',  1,           current === 1,    'Primera'));
+        frag.appendChild(mkBtn('fas fa-angle-left',   current - 1, current === 1,    'Anterior'));
 
-        // Números de página: máx 5 visibles
         const range = 2;
         const from  = Math.max(1, current - range);
         const to    = Math.min(last, current + range);
+        
         if (from > 1) {
             const span = document.createElement('span');
             span.className = 'text-[var(--text-3)] text-xs px-1';
             span.textContent = '…';
-            el.pagBotones.appendChild(span);
+            frag.appendChild(span);
         }
         for (let p = from; p <= to; p++) {
             const btn = document.createElement('button');
@@ -438,24 +449,26 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.disabled  = p === current;
             btn.title     = `Página ${p}`;
             if (p !== current) btn.onclick = () => cargarUsuarios(p);
-            el.pagBotones.appendChild(btn);
+            frag.appendChild(btn);
         }
         if (to < last) {
             const span = document.createElement('span');
             span.className = 'text-[var(--text-3)] text-xs px-1';
             span.textContent = '…';
-            el.pagBotones.appendChild(span);
+            frag.appendChild(span);
         }
 
-        el.pagBotones.appendChild(mkBtn('fas fa-angle-right',  current + 1, current === last, 'Siguiente'));
-        el.pagBotones.appendChild(mkBtn('fas fa-angles-right', last,        current === last, 'Última'));
+        frag.appendChild(mkBtn('fas fa-angle-right',  current + 1, current === last, 'Siguiente'));
+        frag.appendChild(mkBtn('fas fa-angles-right', last,        current === last, 'Última'));
+        
+        el.pagBotones.appendChild(frag);
     };
 
     // ── Búsqueda ──
     el.buscador.oninput = (e) => {
         clearTimeout(timeoutBusqueda);
         el.btnLimpiar.style.display = e.target.value.length > 0 ? 'block' : 'none';
-        timeoutBusqueda = setTimeout(() => cargarUsuarios(1), 350);
+        timeoutBusqueda = setTimeout(() => cargarUsuarios(1), 300);
     };
 
     el.btnLimpiar.onclick = () => {
@@ -478,7 +491,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const abrirModal = () => {
         el.modal.classList.add('open');
         el.btnConfirmar.disabled = false;
-        // Foco en cancelar para que Escape funcione intuitivamente
         setTimeout(() => el.btnCancelar.focus(), 50);
     };
 
@@ -517,21 +529,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     el.btnCancelar.onclick = cerrarModal;
 
-    // Cerrar modal con click en backdrop
     el.modal.addEventListener('click', (e) => {
         if (e.target === el.modal) cerrarModal();
     });
 
-    // Cerrar modal con Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && el.modal.classList.contains('open')) cerrarModal();
     });
 
-    // ── Carga inicial ──
     cargarUsuarios();
 
-    // ── Polling silencioso (solo en pág 1, sin búsqueda) ──
+    // 🚀 Optimización de red: Detener peticiones si el usuario cambia de pestaña
     setInterval(() => {
+        if (document.hidden) return; 
+
         if (paginaActual === 1 && !el.buscador.value.trim() && !el.modal.classList.contains('open')) {
             cargarUsuarios(1, '', true);
         }

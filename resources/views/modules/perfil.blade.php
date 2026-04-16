@@ -146,10 +146,13 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-    const puedeVerDetalle = window.tienePermiso('Perfil', 'bitDetalle');
-    const puedeCrear = window.tienePermiso('Perfil', 'bitAgregar');
-    const puedeEditar = window.tienePermiso('Perfil', 'bitEditar');
-    const puedeEliminar = window.tienePermiso('Perfil', 'bitEliminar');
+    // 🚀 CORRECCIÓN: El nombre debe coincidir EXACTAMENTE con el de la BD y la imagen
+    const nombreEnBD = 'Perfiles'; 
+
+    const puedeVerDetalle = window.tienePermiso(nombreEnBD, 'bitDetalle');
+    const puedeCrear = window.tienePermiso(nombreEnBD, 'bitAgregar');
+    const puedeEditar = window.tienePermiso(nombreEnBD, 'bitEditar');
+    const puedeEliminar = window.tienePermiso(nombreEnBD, 'bitEliminar');
 
     const elements = {
         btnNuevo: document.getElementById('btnNuevoPerfil'),
@@ -174,9 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let timeoutBusqueda;
     let deleteId = null;
     let paginaActual = 1;
-    const localCache = new Map();
+    const localCache = new Map(); // Optimización de memoria
 
-    const skeletonHTML = Array(4).fill().map(() => `
+    const skeletonHTML = Array(4).fill(`
         <tr>
             <td class="py-4 px-6"><div class="flex items-center gap-3"><div class="skeleton w-10 h-10 rounded-lg"></div><div class="skeleton h-4 w-32 rounded"></div></div></td>
             <td class="py-4 px-6"><div class="skeleton h-6 w-24 rounded-full"></div></td>
@@ -208,23 +211,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const datosCambiaron = JSON.stringify(cacheActual?.data) !== JSON.stringify(data.data);
 
             if (datosCambiaron || !silencioso) {
+                if (localCache.size > 20) {
+                    const firstKey = localCache.keys().next().value;
+                    localCache.delete(firstKey);
+                }
                 localCache.set(cacheKey, data);
-                renderFull(data);
+                
+                // Pintado fluido del DOM
+                requestAnimationFrame(() => renderFull(data));
             }
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error('Error cargando perfiles:', err); 
+        }
     };
 
     const renderFull = (data) => {
         renderTabla(data.data || []);
         renderPaginacion(data);
 
-        elements.statTotal.textContent = data.total || 0;
-        elements.tableCount.textContent = `${data.total || 0} PERFILES`;
+        const total = data.total || 0;
+        elements.statTotal.textContent = total;
+        elements.tableCount.textContent = `${total} PERFILES`;
         
-        const superCount = (data.data || []).filter(p => p.bitAdministrador).length;
-        elements.statSuper.textContent = superCount;
-        elements.statStd.textContent = (data.total || 0) - superCount;
+        let superCount = 0;
+        const perfilesArray = data.data || [];
+        for(let i=0; i < perfilesArray.length; i++) {
+            if(perfilesArray[i].bitAdministrador) superCount++;
+        }
 
+        elements.statSuper.textContent = superCount;
+        elements.statStd.textContent = total - superCount;
         elements.btnLimpiar.style.display = elements.buscador.value.length > 0 ? 'block' : 'none';
     };
 
@@ -238,27 +254,31 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.emptyState.classList.add('hidden');
         elements.pagWrapper.classList.remove('hidden');
 
-        let html = '';
-        perfiles.forEach(p => {
+        // Optimización: Construcción de DOM rápida con Array
+        const htmlRows = [];
+        
+        for (let i = 0; i < perfiles.length; i++) {
+            const p = perfiles[i];
             const nombre = p.strNombrePerfil || 'Sin Nombre';
             const initials = nombre.substring(0, 2).toUpperCase();
             const isSuper = !!p.bitAdministrador;
             const isMaster = p.id === 1;
             const attrName = nombre.replace(/"/g, '&quot;');
 
-            const btnVer = puedeVerDetalle 
-                ? `<a href="/perfiles/${p.id}/detalle" class="action-btn tooltip hover:text-blue-500" data-tip="Ver Detalle"><i class="fas fa-eye text-xs"></i></a>` 
-                : '';
-                
-            const btnEditar = (puedeEditar && !isMaster) 
-                ? `<a href="/perfiles/${p.id}/editar" class="action-btn edit tooltip hover:text-yellow-500" data-tip="Editar"><i class="fas fa-pen text-xs"></i></a>` 
-                : (isMaster ? `<div class="action-btn opacity-20 cursor-not-allowed tooltip" data-tip="Protegido"><i class="fas fa-shield-halved text-xs"></i></div>` : '');
-                
-            const btnEliminar = (puedeEliminar && !isMaster) 
-                ? `<button data-action="delete" data-id="${p.id}" data-name="${attrName}" class="action-btn danger tooltip hover:text-red-500" data-tip="Eliminar"><i class="fas fa-trash-can text-xs"></i></button>` 
-                : '';
+            let btnVer = '', btnEditar = '', btnEliminar = '';
 
-            html += `
+            if (puedeVerDetalle) {
+                btnVer = `<a href="/perfiles/${p.id}/detalle" class="action-btn tooltip hover:text-blue-500" data-tip="Ver Detalle"><i class="fas fa-eye text-xs"></i></a>`;
+            }
+
+            if (isMaster) {
+                btnEditar = `<div class="action-btn opacity-20 cursor-not-allowed tooltip" data-tip="Protegido"><i class="fas fa-shield-halved text-xs"></i></div>`;
+            } else {
+                if (puedeEditar) btnEditar = `<a href="/perfiles/${p.id}/editar" class="action-btn edit tooltip hover:text-yellow-500" data-tip="Editar"><i class="fas fa-pen text-xs"></i></a>`;
+                if (puedeEliminar) btnEliminar = `<button data-action="delete" data-id="${p.id}" data-name="${attrName}" class="action-btn danger tooltip hover:text-red-500" data-tip="Eliminar"><i class="fas fa-trash-can text-xs"></i></button>`;
+            }
+
+            htmlRows.push(`
             <tr class="profile-row">
                 <td class="py-4 px-6">
                     <div class="flex items-center gap-3">
@@ -274,9 +294,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td class="py-4 px-6 text-right">
                     <div class="flex items-center justify-end gap-2">${btnVer} ${btnEditar} ${btnEliminar}</div>
                 </td>
-            </tr>`;
-        });
-        elements.tableBody.innerHTML = html;
+            </tr>`);
+        }
+        
+        elements.tableBody.innerHTML = htmlRows.join('');
     };
 
     const renderPaginacion = (data) => {
@@ -288,6 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const current = data.current_page;
         const last = data.last_page;
+        const frag = document.createDocumentFragment();
 
         const createBtn = (icon, page, disabled) => {
             const btn = document.createElement('button');
@@ -298,27 +320,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return btn;
         };
 
-        elements.pagBotones.appendChild(createBtn('fas fa-angles-left', 1, current === 1));
-        elements.pagBotones.appendChild(createBtn('fas fa-angle-left', current - 1, current === 1));
-        elements.pagBotones.appendChild(createBtn('fas fa-angle-right', current + 1, current === last));
-        elements.pagBotones.appendChild(createBtn('fas fa-angles-right', last, current === last));
+        frag.appendChild(createBtn('fas fa-angles-left', 1, current === 1));
+        frag.appendChild(createBtn('fas fa-angle-left', current - 1, current === 1));
+        frag.appendChild(createBtn('fas fa-angle-right', current + 1, current === last));
+        frag.appendChild(createBtn('fas fa-angles-right', last, current === last));
+        
+        elements.pagBotones.appendChild(frag);
     };
 
     elements.buscador.oninput = (e) => {
         clearTimeout(timeoutBusqueda);
         elements.btnLimpiar.style.display = e.target.value.length > 0 ? 'block' : 'none';
-        timeoutBusqueda = setTimeout(() => cargarPerfiles(1), 350);
+        timeoutBusqueda = setTimeout(() => cargarPerfiles(1), 300);
     };
 
     elements.btnLimpiar.onclick = () => {
         elements.buscador.value = '';
+        elements.buscador.focus();
         elements.btnLimpiar.style.display = 'none';
         cargarPerfiles(1);
     };
 
+    // Delegación de eventos optimizada
     elements.tableBody.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-action="delete"]');
         if (!btn) return;
+        
         deleteId = btn.dataset.id;
         document.getElementById('confirmMsg').innerHTML = `¿Deseas eliminar el perfil <strong>${btn.dataset.name}</strong>?`;
         elements.confirmModal.classList.add('open');
@@ -338,11 +365,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarPerfiles(paginaActual);
                 if(window.showToast) window.showToast('Perfil eliminado', 'success');
             }
-        } catch (err) { console.error(err); }
+        } catch (err) { console.error('Error al eliminar:', err); }
     });
 
+    // Corrección visual del cierre del modal
     document.getElementById('btnCancelarConfirm').onclick = () => {
-        elements.confirmModal.classList.remove('open');
+        elements.confirmBox.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => elements.confirmModal.classList.remove('open'), 200);
     };
     
     cargarPerfiles();

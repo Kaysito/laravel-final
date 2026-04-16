@@ -142,37 +142,36 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-    // ── CONFIGURACIÓN (RBAC Visual CAMALEÓNICO) ──
-    // Ahora lee el título que le envía el servidor dinámicamente
-    const MODULO_NAME = "{!! $title ?? '' !!}"; 
+    // 🚀 PREVENCIÓN DE ERRORES: Usamos @json para escapar comillas simples/dobles y evitar que se rompa el JS
+    const MODULO_NAME = @json($title ?? ''); 
     
-    const puedeCrear = window.tienePermiso(MODULO_NAME, 'bitAgregar');
+    const puedeCrear    = window.tienePermiso(MODULO_NAME, 'bitAgregar');
     const puedeEliminar = window.tienePermiso(MODULO_NAME, 'bitEliminar');
-    const puedeEditar = window.tienePermiso(MODULO_NAME, 'bitEditar');
-    const puedeVer = window.tienePermiso(MODULO_NAME, 'bitDetalle');
+    const puedeEditar   = window.tienePermiso(MODULO_NAME, 'bitEditar');
+    const puedeVer      = window.tienePermiso(MODULO_NAME, 'bitDetalle');
 
     const elements = {
-        btnNuevo: document.getElementById('btnNuevoEstatico'),
-        buscador: document.getElementById('buscador'),
-        btnLimpiar: document.getElementById('btnLimpiarBusqueda'),
-        tablaBody: document.getElementById('tablaBody'),
-        emptyState: document.getElementById('emptyState'),
-        pagWrapper: document.getElementById('paginacionWrapper'),
-        pagBotones: document.getElementById('pagBotones'),
-        statTotal: document.getElementById('statTotal'),
-        statActivos: document.getElementById('statActivos'),
-        statInactivos: document.getElementById('statInactivos'),
-        tableCount: document.getElementById('tableCount'),
-        infoRange: document.getElementById('infoRange'),
-        infoTotal: document.getElementById('infoTotal')
+        btnNuevo:       document.getElementById('btnNuevoEstatico'),
+        buscador:       document.getElementById('buscador'),
+        btnLimpiar:     document.getElementById('btnLimpiarBusqueda'),
+        tablaBody:      document.getElementById('tablaBody'),
+        emptyState:     document.getElementById('emptyState'),
+        pagWrapper:     document.getElementById('paginacionWrapper'),
+        pagBotones:     document.getElementById('pagBotones'),
+        statTotal:      document.getElementById('statTotal'),
+        statActivos:    document.getElementById('statActivos'),
+        statInactivos:  document.getElementById('statInactivos'),
+        tableCount:     document.getElementById('tableCount'),
+        infoRange:      document.getElementById('infoRange'),
+        infoTotal:      document.getElementById('infoTotal')
     };
 
     if (elements.btnNuevo && !puedeCrear) elements.btnNuevo.style.display = 'none';
 
-    // Generar datos Lorem Ipsum aleatorios
+    // Generar datos Lorem Ipsum aleatorios (Mockup)
     const dbEstaticos = Array(20).fill().map((_, i) => ({
         id: 101 + i, 
-        nombre: `Registro de ${MODULO_NAME} ${i+1}`, // <-- Adaptamos el dato falso al módulo
+        nombre: `Registro de ${MODULO_NAME} ${i+1}`,
         desc: `Consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`, 
         fecha: `2025-0${Math.floor(Math.random() * 9) + 1}-1${Math.floor(Math.random() * 9)}`, 
         estado: Math.random() > 0.3 ? 1 : 0
@@ -183,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const itemsPorPagina = 5;
 
     // Template para el skeleton loading (6 columnas)
-    const skeletonHTML = Array(itemsPorPagina).fill().map(() => `
+    const skeletonHTML = Array(itemsPorPagina).fill(`
         <tr>
             <td class="py-4 px-6"><div class="skeleton h-4 w-6 rounded"></div></td>
             <td class="py-4 px-6"><div class="skeleton h-4 w-32 rounded"></div></td>
@@ -203,6 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.pagWrapper.classList.add('hidden');
         elements.emptyState.classList.add('hidden');
 
+        // Simulador de latencia de red
         setTimeout(() => {
             const filtrados = dbEstaticos.filter(e => 
                 (e.nombre && e.nombre.toLowerCase().includes(busqueda)) || 
@@ -226,19 +226,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 to: to
             };
 
-            renderFull(dataObj);
+            // Pintado fluido
+            requestAnimationFrame(() => renderFull(dataObj));
         }, 300);
     };
 
     const renderFull = (data) => {
-        renderTabla(data.data, data.from);
+        renderTabla(data.data || [], data.from);
         renderPaginacion(data);
         
         elements.statTotal.textContent = dbEstaticos.length;
         elements.tableCount.textContent = `${data.total} REGISTROS`;
         
-        const activos = dbEstaticos.filter(e => e.estado == 1).length;
-        const inactivos = dbEstaticos.filter(e => e.estado == 0).length;
+        let activos = 0, inactivos = 0;
+        for (let i = 0; i < dbEstaticos.length; i++) {
+            if (dbEstaticos[i].estado == 1) activos++;
+            else inactivos++;
+        }
+        
         elements.statActivos.textContent = activos;
         elements.statInactivos.textContent = inactivos;
 
@@ -252,28 +257,34 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.pagWrapper.classList.add('hidden');
             return;
         }
+        
         elements.emptyState.classList.add('hidden');
         elements.pagWrapper.classList.remove('hidden');
 
-        let html = '';
+        // Optimización: Uso de array para construcción del DOM
+        const htmlRows = [];
+        
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
             const numFila = (fromIndex || 1) + i;
             
-            // Botones visuales reaccionando a la matriz
-            const btnVer = puedeVer 
-                ? `<button type="button" class="action-btn view inline-flex items-center justify-center tooltip hover:bg-blue-500/10 hover:text-blue-400 cursor-default" data-tip="Ver detalle"><i class="fas fa-eye"></i></button>` 
-                : '';
+            let btnVer = '', btnEditar = '', btnEliminar = '';
 
-            const btnEditar = puedeEditar 
-                ? `<button type="button" class="action-btn edit inline-flex items-center justify-center tooltip hover:bg-yellow-500/10 hover:text-yellow-500 cursor-default" data-tip="Editar"><i class="fas fa-pen"></i></button>` 
-                : `<div class="action-btn inline-flex items-center justify-center opacity-20 cursor-not-allowed tooltip" data-tip="Protegido por RBAC"><i class="fas fa-lock"></i></div>`;
+            if (puedeVer) {
+                btnVer = `<button type="button" class="action-btn view inline-flex items-center justify-center tooltip hover:bg-blue-500/10 hover:text-blue-400 cursor-default" data-tip="Ver detalle"><i class="fas fa-eye"></i></button>`;
+            }
 
-            const btnEliminar = puedeEliminar 
-                ? `<button type="button" class="action-btn danger inline-flex items-center justify-center tooltip hover:bg-red-500/10 hover:text-red-500 cursor-default" data-tip="Eliminar"><i class="fas fa-trash-can"></i></button>` 
-                : '';
+            if (puedeEditar) {
+                btnEditar = `<button type="button" class="action-btn edit inline-flex items-center justify-center tooltip hover:bg-yellow-500/10 hover:text-yellow-500 cursor-default" data-tip="Editar"><i class="fas fa-pen"></i></button>`;
+            } else {
+                btnEditar = `<div class="action-btn inline-flex items-center justify-center opacity-20 cursor-not-allowed tooltip" data-tip="Protegido por RBAC"><i class="fas fa-lock"></i></div>`;
+            }
 
-            html += `
+            if (puedeEliminar) {
+                btnEliminar = `<button type="button" class="action-btn danger inline-flex items-center justify-center tooltip hover:bg-red-500/10 hover:text-red-500 cursor-default" data-tip="Eliminar"><i class="fas fa-trash-can"></i></button>`;
+            }
+
+            htmlRows.push(`
             <tr class="data-row hover:bg-[var(--surface-3)] transition-colors">
                 <td class="py-4 px-6 text-xs text-[var(--text-3)] font-mono">${numFila}</td>
                 <td class="py-4 px-6 font-bold text-[var(--text-1)] text-sm">${item.nombre}</td>
@@ -293,9 +304,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${btnEliminar}
                     </div>
                 </td>
-            </tr>`;
+            </tr>`);
         }
-        elements.tablaBody.innerHTML = html;
+        
+        elements.tablaBody.innerHTML = htmlRows.join('');
     };
 
     const renderPaginacion = (data) => {
@@ -310,6 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const current = data.current_page;
         const last = data.last_page;
+        const frag = document.createDocumentFragment();
 
         const createBtn = (icon, page, disabled) => {
             const btn = document.createElement('button');
@@ -320,17 +333,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return btn;
         };
 
-        elements.pagBotones.appendChild(createBtn('fas fa-angles-left', 1, current === 1));
-        elements.pagBotones.appendChild(createBtn('fas fa-angle-left', current - 1, current === 1));
-        elements.pagBotones.appendChild(createBtn('fas fa-angle-right', current + 1, current === last));
-        elements.pagBotones.appendChild(createBtn('fas fa-angles-right', last, current === last));
+        frag.appendChild(createBtn('fas fa-angles-left', 1, current === 1));
+        frag.appendChild(createBtn('fas fa-angle-left', current - 1, current === 1));
+        frag.appendChild(createBtn('fas fa-angle-right', current + 1, current === last));
+        frag.appendChild(createBtn('fas fa-angles-right', last, current === last));
+        
+        elements.pagBotones.appendChild(frag);
     };
 
     // ── BUSCADOR ──
     elements.buscador.oninput = (e) => {
         clearTimeout(timeoutBusqueda);
         elements.btnLimpiar.style.display = e.target.value.length > 0 ? 'block' : 'none';
-        timeoutBusqueda = setTimeout(() => cargarEstaticos(1), 350);
+        timeoutBusqueda = setTimeout(() => cargarEstaticos(1), 300); // Mismo timing que las demás vistas
     };
 
     elements.btnLimpiar.onclick = () => {
